@@ -1,0 +1,481 @@
+/*
+* HugeGrid - jQuery Plugin
+*
+* Copyright (c) 2012 Viacheslav Soroka
+*
+* Version: 1.2.7
+*
+* MIT License - http://www.opensource.org/licenses/mit-license.php
+*/
+
+$hgBackgroundColor: #ffffff;
+$hgTextColor: #857D6F;
+$hgThickBorderColor: #c4b9ae;
+$hgThinBorderColor: #c4b9ae;
+$hgTooltipBorderColor: #c4b9ae;
+$hgSorterBorderColor: #c4b9ae;
+$hgSorterActiveBorderColor: #f48023;
+$hgSelectionBorderColor: #f48023;
+$hgSelectedRowColor: #ffcc6c;
+$hgErrorColor: #A00;
+$hgHighlightTextColor: #F00;
+$hgHoverBackgroundColor: #EEE;
+$hgLoadingBlockBackground: #F8F1E2;
+$hgHScrollBackground: url(../img/scrollh-bg.png) repeat-x 0 0;
+$hgHScrollThumbBackground: url(../img/scrollh-tumb.png) no-repeat center center;
+$hgVScrollBackground: url(../img/scrollv-bg.png) repeat-y 0 0;
+$hgVScrollThumbBackground: url(../img/scrollv-tumb.png) no-repeat center center;
+
+@mixin addHugeGridRowColor($name, $color) {
+	.#{$name}, .qtable .#{$name} > td {
+		background-color: $color;
+	}
+	.hg-over .#{$name}, .#{$name}.hg-over {
+		background-color: darken($color, 4);
+	}
+	.hg-marked-row .#{$name}, .#{$name}.hg-marked-row {
+		background-color: mix($color, $hgSelectedRowColor, 50%) ! important;
+	}
+	.hg-over.hg-marked-row .#{$name}, .#{$name}.hg-over.hg-marked-row {
+		background-color: darken(mix($color, $hgSelectedRowColor, 50%), 4) ! important;
+	}
+
+	.hg-range.#{$name} {
+		background-color: transparentize($color, 0.25);
+	}
+	.hg-over .hg-range.#{$name} {
+		background-color: transparentize(darken($color, 4), 0.25);
+	}
+	.hg-marked-row .hg-range.#{$name} {
+		background-color: transparentize(mix($color, $hgSelectedRowColor, 50%), 0.25);
+	}
+	.hg-over.hg-marked-row .hg-range.#{$name} {
+		background-color: transparentize(darken(mix($color, $hgSelectedRowColor, 50%), 4), 0.25);
+	}
+}
+
+@include addHugeGridRowColor('hg-highlight-red', #ffe5e5);
+@include addHugeGridRowColor('hg-highlight-green', #ddffde);
+@include addHugeGridRowColor('hg-highlight-yellow', #fffef3);
+@include addHugeGridRowColor('hg-highlight-blue', #e2f4ff);
+
+.hg-sort th {
+	padding: 0;
+	vertical-align: top;
+}
+
+.hg-sort th .hg-sort-inner {
+	position: relative;
+	height: 12px;
+	top: 8px;
+}
+
+.hg-hcr-border, .hg-hrw-border {
+	border-bottom: 2px solid $hgThickBorderColor;
+}
+
+.hg-hcr-border, .hg-hcl-border {
+	border-right: 2px solid $hgThickBorderColor;
+}
+
+.hg-th-multi, .hg-cell {
+	position: relative;
+	float: left;
+}
+
+.hg-cell {
+	border-right: 1px solid $hgThinBorderColor;
+	border-bottom: 1px solid $hgThinBorderColor;
+	font-size: 11px;
+	color: $hgTextColor;
+	overflow: hidden;
+	cursor: default;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.hg-cell.multi-line {
+	line-height: 1.2em;
+	white-space: normal;
+}
+
+.hg-tiny-paddng {
+	padding: 2px 1px ! important;
+}
+
+.hg-hb:last-child .hg-cell:last-child {
+	border-right: none;
+}
+
+.hg-content .hg-row > .hg-cell:last-child {
+	border-right: none;
+}
+
+.hg-size {
+	overflow: hidden;
+}
+
+.hg-filter {
+	position: relative;
+	box-sizing: border-box;
+	padding: 2px;
+	.hg-filter-input {
+		display: block ! important;
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		box-sizing: border-box;
+		-webkit-border-radius: 0;
+		-moz-border-radius: 0;
+		border-radius: 0;
+		min-width: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		color: $hgTextColor;
+		font-size: 11px;
+		outline: none;
+		background: $hgBackgroundColor;
+		border-top: 1px solid #5794bf;
+		border-right: 1px solid #b7d5ea;
+		border-bottom: 1px solid #c7e2f1;
+		border-left: 1px solid #c5daed;
+		&.hg-ranged-filter-input {
+			line-height: 20px;
+			padding: 0 2px;
+			overflow: hidden;
+			&.hg-date-range {
+				background: $hgBackgroundColor url(../img/calendar_ico.png) right center no-repeat;
+				background-position: right 2px center;
+				padding-right: 20px;
+			}
+			span {
+				box-sizing: border-box;
+				display: block;
+				width: 100%;
+				overflow: hidden;
+				&.has-error {
+					color: $hgErrorColor;
+				}
+			}
+		}
+	}
+	.hg-filter-date + .ui-datepicker-trigger {
+		position: absolute;
+		right: 4px;
+		top: 50%;
+		margin-top: -8px;
+	}
+	.csel-value {
+		color: $hgTextColor;
+		/*font-size: 11px;
+		line-height: 14px;*/
+	}
+}
+
+.hg-drop-downs {
+	position: absolute;
+	width: 0;
+	height: 0;
+	z-index: 100;
+	.hg-drop-down {
+		box-sizing: border-box;
+		position: absolute;
+		display: none;
+		padding: 5px;
+		border: 1px solid $hgThinBorderColor;
+		background: $hgBackgroundColor;
+		white-space: nowrap;
+		&.active {
+			display: block;
+		}
+		.hg-filter-date {
+			+.ui-datepicker-trigger {
+				position: relative;
+				top: 4px;
+				margin: 0 2px 0 -18px;
+			}
+		}
+	}
+}
+
+.hg-sort {
+	box-sizing: border-box;
+	padding: 0 4px;
+}
+
+.hg-sort-inner {
+	position: relative;
+	width: 32px;
+	margin: 0 auto;
+	top: 3px; /* top: 11px; */
+}
+
+.hg-sort-desc {
+	position: relative;
+	float: left;
+	width: 10px;
+	height: 10px;
+	background: $hgBackgroundColor url(../img/sort_rod.gif) no-repeat -3px -3px;
+	border: 1px solid $hgSorterBorderColor;
+	cursor: pointer;
+	margin: 0 2px;
+}
+
+.hg-sort-asc {
+	position: relative;
+	float: left;
+	width: 10px;
+	height: 10px;
+	background: $hgBackgroundColor url(../img/sort_rod.gif) no-repeat -19px -3px;
+	border: 1px solid $hgSorterBorderColor;
+	cursor: pointer;
+	margin: 0 2px;
+}
+
+.hg-sort-desc.hg-sort-selected {
+	background-position: -3px -19px;
+	border: 1px solid $hgSorterActiveBorderColor;
+}
+
+.hg-sort-asc.hg-sort-selected {
+	background-position: -19px -19px;
+	border: 1px solid $hgSorterActiveBorderColor;
+}
+
+.hg-th {
+	box-sizing: border-box;
+	position: relative;
+	padding: 2px 4px;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+.hg-td {
+	box-sizing: border-box;
+	position: relative;
+	padding: 2px 4px;
+	height: 100%;
+}
+
+.hg-tf {
+	box-sizing: border-box;
+	position: relative;
+	padding: 2px 4px;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.hg-th > span {
+	display: inline-block;
+	vertical-align: middle;
+	line-height: 12px;
+	white-space: normal;
+}
+
+.hg-hb {
+	position: absolute;
+	top: 0;
+	height: 100%;
+}
+
+.hg-block-loading {
+	height: 100%;
+	background: $hgLoadingBlockBackground;
+}
+
+.hg-block-loading-img {
+	position: absolute;
+	left: 16px;
+	top: 4px;
+	width: 16px;
+	height: 16px;
+	background: url(../img/loading2.gif) no-repeat center center;
+}
+
+.hg-hscroll {
+	background: $hgHScrollBackground;
+}
+
+.hg-hscroll-tumb {
+	cursor: pointer;
+	height: 10px;
+	width: 83px;
+	top: 18px;
+	background: $hgHScrollThumbBackground;
+}
+
+.hg-vscroll {
+	background: $hgVScrollBackground;
+}
+
+.hg-vscroll-tumb {
+	cursor: pointer;
+	width: 10px;
+	height: 83px;
+	left: 18px;
+	background: $hgVScrollThumbBackground;
+}
+
+.hg-scroll-grab {
+	position: absolute;
+	left: -10px;
+	top: -10px;
+	right: -10px;
+	bottom: -10px;
+}
+
+.hg-row {
+	position: relative;
+}
+
+.hg-row.red .hg-cell {
+	color: $hgHighlightTextColor;
+}
+
+.hg-over {
+	background: $hgHoverBackgroundColor;
+}
+
+.hg-marked-row {
+	background: $hgSelectedRowColor ! important;
+}
+
+.hg-cell {
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.hg-cell a:not(.action-btn) {
+	text-decoration: none;
+	border: none;
+	vertical-align: middle;
+}
+
+.hg-cell input {
+	margin: 0 3px 0 0;
+	vertical-align: middle;
+}
+
+.hg-highlight-date {
+	font-weight: bold;
+	color: $hgHighlightTextColor;
+}
+
+.huge-grid {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.hg-range {
+	box-sizing: border-box;
+	position: absolute;
+	border: 1px solid $hgThinBorderColor;
+	background: rgba(255, 255, 255, 0.75);
+	text-align: center;
+	font-size: 11px;
+	color: $hgTextColor;
+	overflow: hidden;
+	cursor: default;
+	.hgr-pre, .hgr-post {
+		box-sizing: border-box;
+		position: absolute;
+		top: 0;
+		height: 100%;
+		line-height: 15px;
+		font-size: 11px;
+		padding-top: 2px;
+	}
+	.hgr-pre {
+		left: 0;
+	}
+	.hgr-post {
+		right: 0;
+	}
+}
+
+.hg-tooltip {
+	box-sizing: border-box;
+	position: fixed;
+	display: none;
+	border: 1px solid $hgTooltipBorderColor;
+	padding: 5px;
+	background: $hgBackgroundColor;
+	pointer-events: none;
+	white-space: nowrap;
+	font-size: 10px;
+	color: $hgTextColor;
+	overflow: hidden;
+	&.active {
+		display: block;
+	}
+}
+
+.hg-selection {
+	box-sizing: border-box;
+	position: absolute;
+	border: 2px dotted $hgSelectionBorderColor;
+	pointer-events: none;
+	z-index: 2;
+}
+
+.hg-selection-span-left {
+	border-left: none;
+}
+
+.hg-selection-span-right {
+	border-right: none;
+}
+
+.hg-footer-corner {
+	box-sizing: border-box;
+	position: absolute;
+	border-top: 2px solid $hgThickBorderColor;
+	border-right: 2px solid $hgThickBorderColor;
+}
+
+.hg-footer-row {
+	border-top: 2px solid $hgThickBorderColor;
+}
+
+.hg-footer-corner .hg-cell {
+	border-bottom: none;
+}
+
+.hg-footer-corner .hg-cell:last-child {
+	margin-right: -1px;
+}
+
+.hg-footer-row .hg-cell {
+	border-bottom: none;
+}
+
+.hg-cell.edit input, .hg-cell.edit select {
+	border: none ! important;
+	padding: 0 ! important;
+	margin: 0 ! important;
+	background: transparent ! important;
+	color: $hgTextColor;
+	font-size: 11px;
+	width: 100%;
+	height: 100%;
+	line-height: normal;
+}
+
+.hg-cell.edit {
+	background: $hgBackgroundColor ! important;
+}
+
+.hg-cell.edit .ui-datepicker-trigger {
+	display: none;
+}

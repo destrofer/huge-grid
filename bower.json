@@ -1,0 +1,24 @@
+{
+  "name": "huge-grid",
+  "authors": [
+    "Viacheslav Soroka"
+  ],
+  "description": "A jQuery plugin that allows displaying table with huge amounts of data while having a small performance hit.",
+  "main": "js/huge-grid.js",
+  "keywords": [
+    "table",
+	"grid",
+	"huge grid"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/destrofer/huge-grid",
+  "private": true,
+  "ignore": [
+    "compile-scss.bat"
+  ],
+  "dependencies": {
+    "jquery": "^1.7.2",
+    "jquery.ui": "^1.11.0",
+    "custom-select": "destrofer/custom-select#^1.0.0"
+  }
+}
