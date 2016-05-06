@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.7
+* Version: 1.2.8
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -171,6 +171,11 @@
 					overflow: "hidden"
 				})
 				.append(this.$footerRowContent);
+
+			if( this.options.footer.hasOwnProperty('rowClass') ) {
+				this.$footerCorner.addClass(this.options.footer.rowClass);
+				this.$footerRowContent.addClass(this.options.footer.rowClass);
+			}
 		}
 
 		this.$headCorner =
@@ -2628,6 +2633,11 @@
 			}
 			this.$footerCorner.html(cornerFootHtml);
 			this.$footerRowContent.html(rowFootHtml);
+
+			if( this.options.footer.hasOwnProperty('rowClass') ) {
+				this.$footerCorner.attr('class', 'hg-footer-corner').addClass(this.options.footer.rowClass);
+				this.$footerRowContent.attr('class', 'hg-footer-row-content').addClass(this.options.footer.rowClass);
+			}
 		}
 	};
 
