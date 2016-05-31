@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.8
+* Version: 1.2.9
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1686,14 +1686,22 @@
 
 						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) == 'object' ) {
 							for( i in filter.empty )
-								if( filter.empty.hasOwnProperty(i) )
-									markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i]) + '</option>';
+								if( filter.empty.hasOwnProperty(i) ) {
+									if( typeof filter.empty[i] == 'object' )
+										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.empty[i].value) + '"' + (idx.hasOwnProperty(filter.empty[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i].text) + '</option>';
+									else
+										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i]) + '</option>';
+								}
 						}
 
 						if( filter.hasOwnProperty('options') && filter.options && typeof(filter.options) == 'object' ) {
 							for( i in filter.options )
-								if( filter.options.hasOwnProperty(i) )
-									markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i]) + '</option>';
+								if( filter.options.hasOwnProperty(i) ) {
+									if( typeof filter.options[i] == 'object' )
+										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.options[i].value) + '"' + (idx.hasOwnProperty(filter.options[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i].text) + '</option>';
+									else
+										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i]) + '</option>';
+								}
 						}
 
 						markup += '</select>';
