@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.9
+* Version: 1.2.10
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -333,7 +333,11 @@
 		$this.append(this.$dropDowns);
 
 		if( this.$vScroll ) {
-			this.$vScrollTumb.draggable({axis: 'y', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onVScroll });
+			this.$vScrollTumb.draggable({axis: 'y', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onVScroll, start: function(e, ui) {
+				$(e.target).css({left: '18px'});
+			}, stop: function(e, ui) {
+				$(e.target).css({left: '18px'});
+			} });
 			this.$vScrollTumb.data("hugeGrid", [this, 0]);
 			this.vScrollMax = Math.max(this.contentHeight - this.containerHeight - 1, 0);
 			this.vScrollSize = this.$vScrollTumb.parent().innerHeight() - this.$vScrollTumb.outerHeight();
@@ -342,7 +346,11 @@
 			this.vScrollMax = this.vScrollSize = 0;
 		}
 
-		this.$hScrollTumb.draggable({axis: 'x', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onHScroll });
+		this.$hScrollTumb.draggable({axis: 'x', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onHScroll, start: function(e, ui) {
+			$(e.target).css({top: '18px'});
+		}, stop: function(e, ui) {
+			$(e.target).css({top: '18px'});
+		} });
 		this.$hScrollTumb.data("hugeGrid", [this, 0]);
 		this.hScrollMax = Math.max(this.contentWidth - this.containerWidth - 1, 0);
 		this.hScrollSize = this.$hScrollTumb.parent().innerWidth() - this.$hScrollTumb.outerWidth();
@@ -2775,7 +2783,7 @@
 	};
 
 	// this - scroll bar dom element
-	HugeGrid.onVScroll = function() {
+	HugeGrid.onVScroll = function(e, ui) {
 		var $this = $(this);
 		var scrollOptions = $this.data("hugeGrid");
 		var pos = $this.position().top;
@@ -2790,6 +2798,11 @@
 		grid.$content.css({top: scpos});
 		grid.$headColContent.css({top: scpos});
 
+		ui.offset.left += 18 - ui.originalPosition.left;
+		ui.originalPosition.left = 18;
+		ui.position.left = 18;
+		$this.css({left: '18px'});
+
 		grid.updateVisibleRowIndexes();
 		grid.refreshView();
 		grid.processLoadingQueue();
@@ -2799,7 +2812,7 @@
 	};
 
 	// this - scroll bar dom element
-	HugeGrid.onHScroll = function() {
+	HugeGrid.onHScroll = function(e, ui) {
 		var $this = $(this);
 		var scrollOptions = $this.data("hugeGrid");
 		var pos = $this.position().left;
@@ -2816,9 +2829,14 @@
 		if( grid.$footerCorner )
 			grid.$footerRowContent.css({left: scpos});
 
+		ui.offset.top += 18 - ui.originalPosition.top;
+		ui.originalPosition.top = 18;
+		ui.position.top = 18;
+		$this.css({top: '18px'});
+
 		grid.refreshView();
 
-		if( oldpos != grid.vScrollPos && typeof(grid.options.onScroll) == "function" )
+		if( oldpos != grid.hScrollPos && typeof(grid.options.onScroll) == "function" )
 			grid.options.onScroll.call(grid, grid.hScrollPos, grid.vScrollPos);
 	};
 
