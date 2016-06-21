@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.10
+* Version: 1.2.11
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -810,6 +810,19 @@
 		return this.filterData;
 	};
 
+	HugeGrid.prototype.resetFilter = function() {
+		this.filterData = {};
+		$('.hg-filter-input', this.$grid).each(function() {
+			var $this = $(this);
+			if( $this.is('input') )
+				$this.val('');
+			else if( $this.is('select') )
+				$this.val([]);
+			else if( $this.is('.hg-ranged-filter-input') )
+				$this.children('span').attr('title', '').text('');
+		});
+	};
+
 	HugeGrid.prototype.initView = function() {
 		var i, j;
 		var cornerHtml = '', rowHtml = '';
@@ -1603,7 +1616,7 @@
 	};
 
 	HugeGrid.prototype.getFilterCellDropDownHtml = function(cellInfo) {
-		var html = '', i, from, to;
+		var html = '', i, j, from, to;
 		if( cellInfo.children == null ) {
 			var filter = cellInfo.filter;
 			var colId = 'data-col="' + HugeGrid.htmlspecialchars(cellInfo.id) + '"';
@@ -1651,14 +1664,14 @@
 			}
 		}
 		else {
-			for( i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getFilterCellDropDownHtml(cellInfo.children[j]);
+			for( i = 0, j = cellInfo.children.length - 1; i <= j; i++)
+				html += this.getFilterCellDropDownHtml(cellInfo.children[i]);
 		}
 		return html;
 	};
 
 	HugeGrid.prototype.getFilterCellHtml = function(cellInfo, rightClass, bottomClass) {
-		var html = '', i, from, to;
+		var html = '', i, j, from, to;
 		if( cellInfo.children == null ) {
 			var ccls = ' ' + this.getColumnClasses(cellInfo.id);
 			var markup = '';
@@ -1721,8 +1734,8 @@
 			html += '<div id="hgfc_' + this.id + '_' + cellInfo.id + '" data-key="' + cellInfo.id + '" class="hg-cell hg-filter hg-' + this.id + '-filter ' + rightClass + ' ' + bottomClass + ' hg-' + this.id + '-ds-' + cellInfo.id + ' hg-' + this.id + '-col-' + cellInfo.id + ccls + '">' + markup + '</div>';
 		}
 		else {
-			for( i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getFilterCellHtml(cellInfo.children[j], ((i == 0) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
+			for( i = 0, j = cellInfo.children.length - 1; i <= j; i++)
+				html += this.getFilterCellHtml(cellInfo.children[i], ((i == j) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
 		}
 		return html;
 	};
@@ -3103,6 +3116,7 @@
 					case "setDataParam": instance.dataParam = instance.options.dataParam = hgArgs[1]; break;
 					case "updateFooter": instance.updateFooter(hgArgs[1]); break;
 					case "getFilterData": retVal = $.extend({}, instance.getFilterData()); break;
+					case "resetFilter": retVal = $.extend({}, instance.resetFilter()); break;
 					case "getCellDimensions": retVal = instance.getCellDimensions(hgArgs[1], hgArgs[2]); break;
 					case "getRowByIndex": retVal = instance.getRowByIndex(hgArgs[1]); break;
 					case "getRow": retVal = instance.getRow(hgArgs[1]); break;
