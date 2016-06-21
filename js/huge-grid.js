@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.12
+* Version: 1.2.13
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -913,6 +913,14 @@
 		this.$grid
 			.on('change', '.hg-mark', function(e) {
 				$(this).closest('.huge-grid').data('hugeGrid').onMarkChange(e);
+			})
+			.on('keydown', ':input.hg-filter-input', function(e) {
+				var key = e.keyCode || e.which;
+				if( key == 13 ) {
+					$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
+					e.preventDefault();
+					e.stopPropagation();
+				}
 			})
 			.on('change', ':input.hg-filter-input', function(e) {
 				$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
