@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.11
+* Version: 1.2.12
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1033,6 +1033,7 @@
 	};
 
 	HugeGrid.prototype.onMouseOver = function(e) {
+		HugeGrid.mouseOverGrid = this;
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		target.event = e;
@@ -1069,6 +1070,7 @@
 	};
 
 	HugeGrid.prototype.onMouseOut = function(e) {
+		HugeGrid.mouseOverGrid = null;
 		HugeGrid.hideToolTip(false);
 
 		var target = this.identifyTarget(e.target);
@@ -3018,6 +3020,7 @@
 		onSort: function(colId, isDesc) { return this.onDefaultSort(colId, isDesc); },
 		onMarkChange: null,			// function(target)
 		onFilterChange: null,		// function(target) Grid will not be reloaded if function returns FALSE.
+		onBeforeWheelScroll: null,	// function(event, delta, deltaX, deltaY) Must return TRUE to allow default grid scrolling.
 		onMouseDown: null,			// function(target)
 		onMouseUp: null,			// function(target)
 		// onMouseMove: null,			// function(target)
@@ -3071,6 +3074,7 @@
 	HugeGrid.nextAutoId = 0;
 
 	HugeGrid.gridTrackingMouseUp = null;
+	HugeGrid.mouseOverGrid = null;
 
 	$.hugeGrid = HugeGrid;
 
@@ -3090,6 +3094,15 @@
 			$.hugeGrid.gridTrackingMouseUp = null;
 			inst.onMouseUp(e);
 		});
+
+	$(window).on('mousewheel', function(e, delta, deltaX, deltaY) {
+		if( HugeGrid.mouseOverGrid ) {
+			if( typeof HugeGrid.mouseOverGrid.options.onBeforeWheelScroll == 'function' )
+				if( !HugeGrid.mouseOverGrid.options.onBeforeWheelScroll.call(HugeGrid.mouseOverGrid, e, delta, deltaX, deltaY) )
+					return;
+			HugeGrid.mouseOverGrid.scrollBy(-deltaX * 120, -deltaY * 60);
+		}
+	});
 
 	$.fn.hugeGrid = function(options) {
 		var hgArgs = arguments;
@@ -3141,6 +3154,7 @@
 					case "onSort": instance.options.onSort = hgArgs[1]; break;
 					case "onMarkChange": instance.options.onMarkChange = hgArgs[1]; break;
 					case "onFilterChange": instance.options.onFilterChange = hgArgs[1]; break;
+					case "onBeforeWheelScroll": instance.options.onBeforeWheelScroll = hgArgs[1]; break;
 					case "onMouseDown": instance.options.onMouseDown = hgArgs[1]; break;
 					case "onMouseUp": instance.options.onMouseUp = hgArgs[1]; break;
 					// case "onMouseMove": instance.options.onMouseMove = hgArgs[1]; break;
