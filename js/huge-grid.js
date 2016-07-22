@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.13
+* Version: 1.2.14
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -717,6 +717,16 @@
 	HugeGrid.prototype.selection = null;
 
 	/**
+	 * @type {object}
+	 */
+	HugeGrid.prototype.tracker = null;
+
+	/**
+	 * @type {boolean}
+	 */
+	HugeGrid.prototype.temporaryPreventClick = false;
+
+	/**
 	 * @type {int}
 	 */
 	HugeGrid.prototype.selectionMinColumnIndex = null;
@@ -1020,7 +1030,21 @@
 			this.reloadData(false);
 	};
 
+	HugeGrid.prototype.beginCursorTracking = function(tracker) {
+		if( tracker )
+			this.$grid.addClass('hg-tracking');
+		else
+			this.$grid.removeClass('hg-tracking');
+		this.tracker = tracker;
+	};
+
 	HugeGrid.prototype.onClick = function(e) {
+		if( this.temporaryPreventClick ) {
+			temporaryPreventClick = false;
+			e.stopImmediatePropagation();
+			e.preventDefault();
+			return;
+		}
 		if( $(e.target).is('.hg-mark') )
 			return;
 		var target = this.identifyTarget(e.target);
@@ -1052,24 +1076,30 @@
 				$('#hgr1_' + this.id + '_' + target.rowIdx + ',#hgr2_' + this.id + '_' + target.rowIdx).addClass("hg-over");
 		}
 
-		if( this.selection !== null && this.selection.active && target.type == 'data' ) {
-			var col = this.getHeader(target.colId);
-			if( this.selectionMinColumnIndex && col.index < this.selectionMinColumnIndex )
-				col = this.columnList[this.selectionMinColumnIndex];
-			if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
-				col = this.columnList[this.selectionMaxColumnIndex];
-			var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
+		if( target.type == 'data' ) {
+			if( this.tracker ) {
+				if( typeof this.tracker.move == 'function' )
+					this.tracker.move.call(this.tracker, target, this);
+			}
+			else if( this.selection !== null && this.selection.active ) {
+				var col = this.getHeader(target.colId);
+				if( this.selectionMinColumnIndex && col.index < this.selectionMinColumnIndex )
+					col = this.columnList[this.selectionMinColumnIndex];
+				if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
+					col = this.columnList[this.selectionMaxColumnIndex];
+				var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
 
-			if( typeof(this.options.onSelectionChange) == "function" )
-				this.options.onSelectionChange.call(this, target);
+				if( typeof(this.options.onSelectionChange) == "function" )
+					this.options.onSelectionChange.call(this, target);
 
-			if( target.event.isDefaultPrevented() )
-				return;
+				if( target.event.isDefaultPrevented() )
+					return;
 
-			this.select(this.selection.startedAt.row, this.selection.startedAt.column.id, row, col.id, true);
+				this.select(this.selection.startedAt.row, this.selection.startedAt.column.id, row, col.id, true);
+			}
 		}
 
-		if( this.selection === null || !this.selection.active ) {
+		if( (this.selection === null || !this.selection.active) && !this.tracker ) {
 			if( target.type == 'data' && target.row.hasOwnProperty('tooltips') && target.row.tooltips.hasOwnProperty(target.colId) )
 				HugeGrid.showToolTip(e, target.type + '.' + target.rowId + '.' + target.colId, target.row.tooltips[target.colId]);
 			else if( target.type == 'range' && target.range.hasOwnProperty('tooltip') )
@@ -1104,7 +1134,7 @@
 		if( typeof(this.options.onMouseDown) == "function" )
 			this.options.onMouseDown.call(this, target);
 
-		if( this.options.selectionMode != 'none' && target.type == 'data' ) {
+		if( !this.tracker && this.options.selectionMode != 'none' && target.type == 'data' ) {
 			if( target.event.isDefaultPrevented() )
 				return;
 
@@ -1124,8 +1154,27 @@
 	};
 
 	HugeGrid.prototype.onMouseUp = function(e) {
+		if( this.tracker ) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			this.temporaryPreventClick = true;
+			setTimeout((function() { this.temporaryPreventClick = false; }).bind(this), 10);
+
+			var tracker = this.tracker;
+			this.tracker = null;
+
+			var target = this.identifyTarget(e.target);
+
+			this.$grid.removeClass('hg-tracking');
+
+			if( typeof tracker.end == 'function' )
+				tracker.end.call(tracker, target, this);
+		}
+
 		if( $(e.target).is('.hg-mark') )
 			return;
+
 		if( this.selection !== null && this.selection.active ) {
 			var target = this.identifyTarget(e.target);
 
@@ -1153,7 +1202,7 @@
 	};
 
 	HugeGrid.prototype.onMouseMove = function(e) {
-		if( this.selection !== null && this.selection.active ) {
+		if( this.tracker || (this.selection !== null && this.selection.active) ) {
 			this.autoScrollTick(e);
 		}
 	};
@@ -1161,7 +1210,7 @@
 	HugeGrid.prototype.autoScrollTick = function(e) {
 		if( typeof(e) != 'object' && this.autoScroll === null )
 			return;
-		if( !this.selection || !this.selection.active )
+		if( !this.tracker && (!this.selection || !this.selection.active) )
 			return;
 
 		if( this.autoScroll === null ) {
@@ -1212,27 +1261,33 @@
 			var elem = document.elementFromPoint(this.autoScroll.cursorX - $win.scrollLeft(), this.autoScroll.cursorY - $win.scrollTop());
 			var target = this.identifyTarget(elem);
 			if( target !== null && target.type != 'range' ) {
-				var col = this.getHeader(target.colId);
-				if( this.selectionMinColumnIndex && col.index < this.selectionMinColumnIndex )
-					col = this.columnList[this.selectionMinColumnIndex];
-				if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
-					col = this.columnList[this.selectionMaxColumnIndex];
-				var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
+				if( this.tracker ) {
+					if( typeof this.tracker.move == 'function' )
+						this.tracker.move.call(this.tracker, target, this);
+				}
+				else {
+					var col = this.getHeader(target.colId);
+					if( this.selectionMinColumnIndex && col.index < this.selectionMinColumnIndex )
+						col = this.columnList[this.selectionMinColumnIndex];
+					if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
+						col = this.columnList[this.selectionMaxColumnIndex];
+					var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
 
-				target.event = {
-					target: elem,
-					defaultPrevented: false,
-					preventDefault: function() { this.defaultPrevented = true; },
-					isDefaultPrevented: function() { return this.defaultPrevented; }
-				};
+					target.event = {
+						target: elem,
+						defaultPrevented: false,
+						preventDefault: function() { this.defaultPrevented = true; },
+						isDefaultPrevented: function() { return this.defaultPrevented; }
+					};
 
-				if( typeof(this.options.onSelectionChange) == "function" )
-					this.options.onSelectionChange.call(this, target);
+					if( typeof(this.options.onSelectionChange) == "function" )
+						this.options.onSelectionChange.call(this, target);
 
-				if( target.event.isDefaultPrevented() )
-					return;
+					if( target.event.isDefaultPrevented() )
+						return;
 
-				this.select(this.selection.startedAt.row, this.selection.startedAt.column.id, row, col.id, true);
+					this.select(this.selection.startedAt.row, this.selection.startedAt.column.id, row, col.id, true);
+				}
 			}
 		}
 		else if( this.autoScroll.timer != null ) {
@@ -3108,7 +3163,7 @@
 			if( typeof HugeGrid.mouseOverGrid.options.onBeforeWheelScroll == 'function' )
 				if( !HugeGrid.mouseOverGrid.options.onBeforeWheelScroll.call(HugeGrid.mouseOverGrid, e, delta, deltaX, deltaY) )
 					return;
-			HugeGrid.mouseOverGrid.scrollBy(-deltaX * 120, -deltaY * 60);
+			HugeGrid.mouseOverGrid.scrollBy(deltaX * 120, -deltaY * 60);
 		}
 	});
 
@@ -3158,6 +3213,7 @@
 						else
 							retVal = instance.data;
 						break;
+					case "beginCursorTracking": instance.beginCursorTracking(hgArgs[1]); break;
 
 					case "onSort": instance.options.onSort = hgArgs[1]; break;
 					case "onMarkChange": instance.options.onMarkChange = hgArgs[1]; break;
