@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.2.14
+* Version: 1.3.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -741,6 +741,24 @@
 	 */
 	HugeGrid.prototype.autoScroll = null;
 
+	/**
+	 *
+	 * @param {jQuery} $target
+	 * @param {string} eventName
+	 * @param {object} eventArgs
+	 * @return {jQuery.Event}
+	 */
+	HugeGrid.prototype.triggerEvent = function($target, eventName, eventArgs) {
+		var e = jQuery.Event(eventName + '.hugegrid');
+		e.grid = this.$grid;
+		if( typeof eventArgs == 'object' )
+			for( var i in eventArgs )
+				if( eventArgs.hasOwnProperty(i) )
+					e[i] = eventArgs[i];
+		$target.trigger(e);
+		return e;
+	};
+
 	HugeGrid.prototype.scrollBy = function(hDelta, vDelta) {
 		var hPos = this.hScrollPos + hDelta;
 		var vPos = this.vScrollPos + vDelta;
@@ -979,16 +997,22 @@
 		if( typeof initSpecialInputs == 'function' )
 			initSpecialInputs();
 
-		this.$grid.trigger('init');
+		this.triggerEvent(this.$grid, 'init');
 
 		this.processLoadingQueue();
 	};
 
 	HugeGrid.prototype.onMarkChange = function(e) {
+		var $target = $(e.target);
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return; // should not happen
 		target.event = e;
-		this.markRow(target.rowIdx, $(e.target).prop('checked'), true);
+
+		this.markRow(target.rowIdx, $target.prop('checked'), true);
+
+		if( this.triggerEvent($target, 'markchange', {originalEvent: e, gridTarget: target}).isPropagationStopped() )
+			return;
+
 		if( typeof(this.options.onMarkChange) == "function" )
 			this.options.onMarkChange.call(this, target);
 	};
@@ -1022,11 +1046,14 @@
 		if( target.hasOwnProperty('viewTarget') )
 			$('#' + target.viewTarget).html(HugeGrid.getFilterRangeViewHtml(data.hasOwnProperty(target.colId) ? data[target.colId] : {}, this.columnIndex[target.colId].filter.type));
 
-		var res = true;
-		if( typeof(this.options.onFilterChange) == "function" )
-			res = this.options.onFilterChange.call(this, target);
+		var fe = this.triggerEvent($(e.target), 'filterchange', {originalEvent: e, gridTarget: target, filterData: data});
 
-		if( typeof res != 'boolean' || res === true )
+		var res = true;
+		if( !fe.isPropagationStopped() )
+			if( typeof(this.options.onFilterChange) == "function" )
+				res = this.options.onFilterChange.call(this, target);
+
+		if( (typeof res != 'boolean' || res === true) && !fe.isDefaultPrevented() )
 			this.reloadData(false);
 	};
 
@@ -1462,7 +1489,7 @@
 			// PHP widget limitations) and since setting custom sort function on init event will be too late.
 			// When event is triggered the grid will not be entirely ready, but at least grid data will be.
 			if( firstCall )
-				this.$grid.trigger('beforefirstsort');
+				this.triggerEvent(this.$grid, 'beforefirstsort');
 
 			this.applySorting();
 		}
@@ -1595,9 +1622,13 @@
 	};
 
 	HugeGrid.prototype.applySorting = function() {
+		if( this.triggerEvent(this.$grid, 'sort', {sortKey: this.sortKey, sortDesc: this.sortDesc}).isDefaultPrevented() )
+			return;
+
 		if( typeof(this.options.onSort) == "function" )
 			if( this.options.onSort.call(this, this.sortKey, this.sortDesc) )
 				return;
+
 		$(".hg-sort-selected", this.$grid).removeClass("hg-sort-selected");
 		if( this.sortKey )
 			$("#hgsc_" + this.id + '_' + this.sortKey).find(".hg-sort-" + (this.sortDesc ? "desc" : "asc")).addClass("hg-sort-selected");
