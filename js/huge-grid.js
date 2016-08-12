@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.3.0
+* Version: 1.3.1
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1000,6 +1000,30 @@
 		this.triggerEvent(this.$grid, 'init');
 
 		this.processLoadingQueue();
+	};
+
+	HugeGrid.prototype.updateHorizontalBlocks = function() {
+		var cssRules = '';
+		var hb, hbIdx, prevHbIdx = -1, hbPos = 0, hbWidth = 0;
+
+		this.hBlocks = [];
+		for( var i = this.options.fixedColumns, il = this.options.header.length; i < il; i++ ) {
+			hbIdx = Math.floor((i - this.options.fixedColumns) / this.options.hBlockSize);
+			if( hbIdx != prevHbIdx ) {
+				if( prevHbIdx >= 0 )
+					this.hBlocks.push([hbPos, hbPos + (hbWidth ? (hbWidth - 1) : 0)]);
+
+				hbPos += hbWidth;
+				hbWidth = 0;
+				this.replaceCSSRules('hg-' + this.id + '-hb-' + hbIdx, 'left:' + hbPos + 'px;');
+				prevHbIdx = hbIdx;
+			}
+			var hcw = this.getHeadCellWidth(this.options.header[i]);
+			hbWidth += (hcw > 0) ? (hcw + 1) : 0;
+		}
+
+		if( prevHbIdx >= 0 )
+			this.hBlocks.push([hbPos, hbPos + hbWidth - 1]);
 	};
 
 	HugeGrid.prototype.onMarkChange = function(e) {
@@ -2541,6 +2565,7 @@
 		}
 
 		this.recalculateColumnPositions(this.options.header, null, false);
+		this.updateHorizontalBlocks();
 
 		var sizes = this.calculateSizes();
 		this.contentWidth = sizes.contentWidth;
