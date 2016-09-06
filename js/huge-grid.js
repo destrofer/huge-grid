@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.3.1
+* Version: 1.3.2
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -2648,6 +2648,14 @@
 		if( this.$footerCorner ) {
 			this.$footerCorner.css({top: fullHeadHeight + this.containerHeight + 'px'});
 			this.$footerRow.css({width: this.containerWidth + "px", top: fullHeadHeight + this.containerHeight + 'px'});
+		}
+
+		if( this.autoHeight ) {
+			this.contentHeight = this.containerHeight + 1;
+			if( this.$headColContent )
+				this.$headColContent.css({height: this.contentHeight + 'px'});
+			if( this.$content )
+				this.$content.css({height: this.contentHeight + 'px'});
 		}
 
 		this.$hScroll.css({width: this.containerWidth + "px"});
