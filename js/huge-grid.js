@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.3.2
+* Version: 1.4.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -2294,6 +2294,7 @@
 						grid.options.onRowCountUpdate(resp.totalRows, resp.totalUnfilteredRows);
 
 					for( var rowIdx = resp.firstRow, i = 0; rowIdx <= resp.lastRow; rowIdx++, i++ ) {
+						resp.data[i].blockId = blockId;
 						grid.dataIndex[resp.data[i].id] = grid.data[rowIdx] = resp.data[i];
 					}
 					grid.onDataReady(blockId);
@@ -2324,85 +2325,89 @@
 		this.updateVisibleRowIndexes();
 	};
 
-	HugeGrid.prototype.onDataReady = function(blockId) {
-		this.loadQueue.load--;
-		var requests = this.loadQueue.req;
-		var req = requests[blockId];
-		var blocks = this.blocks[this.options.blockLevels - 1];
+	HugeGrid.prototype.generateDataBlockHtml = function(blockId, updateDom) {
+		var n, i, j;
 		var lastRow = this.rowCount - 1;
-		var n;
-		for( var br1 = blockId; br1 <= req.lastId; br1 += this.options.blockSize ) {
-			var blockData = blocks[br1];
-			// GENERATE DATA BLOCK HTML (ROWS, CELLS)
-			var i, j;
-			var colHtml = '', contentHtml = '';
-			var n1 = Math.max(br1, 0);
-			var n2 = Math.min(br1 + this.options.blockSize - 1, lastRow);
-			for( n = n1; n <= n2; n++ ) {
-				var rowData = this.data[n];
-				if( typeof(rowData) != 'object' ) {
-					setTimeout(function() {
-						if( this.dataLost )
-							alert('Error: Grid received less data than expected. Please reset or reapply the filter to reload the data.');
-						else {
-							this.dataLost = true;
-							if( typeof(createFilter) == 'function' )
-								createFilter(true);
-							else {
-								this.dataParam = null;
-								this.reloadData(false);
-							}
-						}
-					}, 10);
-					break;
-				}
-				var rowClass = 'hg-row hg-' + this.id + '-row';
-				if( typeof(rowData.rowClass) == "string" )
-					rowClass += ' ' + rowData.rowClass;
-				colHtml += '<div id="hgr1_' + this.id + '_' + n + '" class="' + rowClass + '">';
-				contentHtml += '<div id="hgr2_' + this.id + '_' + n + '" class="' + rowClass + '">';
-				var hb = 0, hbIdx;
-				for( i = 0, j = this.options.header.length - 1; j >= 0; i++, j-- ) {
-					var hdr = this.options.header[i];
-					hb = i - this.options.fixedColumns;
-					if( hb < 0 )
-						colHtml += this.getDataCellHtml(this.options.header[i], n, '', '');
+		var blockData = this.blocks[this.options.blockLevels - 1][blockId];
+		var colHtml = '', contentHtml = '';
+		var n1 = Math.max(blockId, 0);
+		var n2 = Math.min(blockId + this.options.blockSize - 1, lastRow);
+		for( n = n1; n <= n2; n++ ) {
+			var rowData = this.data[n];
+			if( typeof(rowData) != 'object' ) {
+				setTimeout(function() {
+					if( this.dataLost )
+						alert('Error: Grid received less data than expected. Please reset or reapply the filter to reload the data.');
 					else {
-						if( hb % this.options.hBlockSize == 0 && j > 0 ) {
-							hbIdx = hb / this.options.hBlockSize;
-							if( hb > 0 )
-								contentHtml += '</div>';
-							var hideBlock = hbIdx < this.firstVisibleHBlockIdx || hbIdx > this.lastVisibleHBlockIdx;
-							contentHtml += '<div class="hg-hb hg-' + this.id + '-hb-' + hbIdx + (hideBlock ? ' hidden' : '')  + '">';
+						this.dataLost = true;
+						if( typeof(createFilter) == 'function' )
+							createFilter(true);
+						else {
+							this.dataParam = null;
+							this.reloadData(false);
 						}
-						contentHtml += this.getDataCellHtml(this.options.header[i], n, '', '');
 					}
-				}
-				colHtml += '</div>';
-				if( hb > 0 )
-					contentHtml += '</div>';
-
-				contentHtml += this.getRowRangesHTML(n);
-				contentHtml += '</div>';
+				}, 10);
+				break;
 			}
+			var rowClass = 'hg-row hg-' + this.id + '-row';
+			if( typeof(rowData.rowClass) == "string" )
+				rowClass += ' ' + rowData.rowClass;
+			colHtml += '<div id="hgr1_' + this.id + '_' + n + '" class="' + rowClass + '">';
+			contentHtml += '<div id="hgr2_' + this.id + '_' + n + '" class="' + rowClass + '">';
+			var hb = 0, hbIdx;
+			for( i = 0, j = this.options.header.length - 1; j >= 0; i++, j-- ) {
+				var hdr = this.options.header[i];
+				hb = i - this.options.fixedColumns;
+				if( hb < 0 )
+					colHtml += this.getDataCellHtml(this.options.header[i], n, '', '');
+				else {
+					if( hb % this.options.hBlockSize == 0 && j > 0 ) {
+						hbIdx = hb / this.options.hBlockSize;
+						if( hb > 0 )
+							contentHtml += '</div>';
+						var hideBlock = hbIdx < this.firstVisibleHBlockIdx || hbIdx > this.lastVisibleHBlockIdx;
+						contentHtml += '<div class="hg-hb hg-' + this.id + '-hb-' + hbIdx + (hideBlock ? ' hidden' : '')  + '">';
+					}
+					contentHtml += this.getDataCellHtml(this.options.header[i], n, '', '');
+				}
+			}
+			colHtml += '</div>';
+			if( hb > 0 )
+				contentHtml += '</div>';
 
-			var t = br1 * (this.options.rowHeight + 1);
-			blockData.html1 = '<div class="hg-' + this.id + '-lblock" id="hgb1_' + this.id + '_' + br1 + '" style="top:' + t + 'px">' + colHtml + '</div>';
-			blockData.html2 = '<div class="hg-' + this.id + '-rblock" id="hgb2_' + this.id + '_' + br1 + '" style="top:' + t + 'px"><div>' + contentHtml + '</div></div>';
+			contentHtml += this.getRowRangesHTML(n);
+			contentHtml += '</div>';
+		}
 
-			blockData.hBlockVis = [this.firstVisibleHBlockIdx, this.lastVisibleHBlockIdx];
+		var t = blockId * (this.options.rowHeight + 1);
+		blockData.html1 = '<div class="hg-' + this.id + '-lblock" id="hgb1_' + this.id + '_' + blockId + '" style="top:' + t + 'px">' + colHtml + '</div>';
+		blockData.html2 = '<div class="hg-' + this.id + '-rblock" id="hgb2_' + this.id + '_' + blockId + '" style="top:' + t + 'px"><div>' + contentHtml + '</div></div>';
 
-			$("#hgb1_" + this.id + '_' + br1).html(colHtml);
-			$("#hgb2_" + this.id + '_' + br1).html(contentHtml);
+		blockData.hBlockVis = [this.firstVisibleHBlockIdx, this.lastVisibleHBlockIdx];
 
-			for( n = n1; n <= n2; n++ )
+		if( updateDom ) {
+			$("#hgb1_" + this.id + '_' + blockId).html(colHtml);
+			$("#hgb2_" + this.id + '_' + blockId).html(contentHtml);
+
+			for( n = n1; n <= n2; n++ ) {
 				if( this.data[n].marked ) {
 					var $row = $('#hgr1_' + this.id + '_' + n);
 					$('#hgr2_' + this.id + '_' + n).addClass("hg-marked-row");
 					$row.addClass('hg-marked-row');
 					$('.hg-mark', $row).prop('checked', true);
 				}
+			}
+		}
 
+	};
+
+	HugeGrid.prototype.onDataReady = function(blockId) {
+		this.loadQueue.load--;
+		var requests = this.loadQueue.req;
+		var req = requests[blockId];
+		for( var br1 = blockId; br1 <= req.lastId; br1 += this.options.blockSize ) {
+			this.generateDataBlockHtml(br1, true);
 			if( br1 != blockId ) {
 				// block is loaded so it is not needed in the queue anymore
 				requests[br1] = null;
@@ -2799,32 +2804,42 @@
 		}
 	};
 
-	HugeGrid.prototype.updateRow = function(row) {
-		this.updateRows([row]);
+	HugeGrid.prototype.updateRow = function(row, updateDom) {
+		this.updateRows([row], updateDom);
 	};
 
-	HugeGrid.prototype.updateRows = function(rows) {
-		if( this.useAjaxLoading || rows.length == 0 )
+	HugeGrid.prototype.updateRows = function(rows, updateDom) {
+		if( rows.length == 0 )
 			return;
 
 		var updated = false;
-		var data = this.options.data;
-
+		var data = this.useAjaxLoading ? this.data : this.options.data;
 		var idIndex = {};
+		var invalidateBlocks = {};
 		for( var i = data.length - 1; i >= 0; i-- )
 			idIndex[data[i].id] = i;
 		for( i = rows.length - 1; i >= 0; i-- ) {
 			var row = rows[i];
 			if( typeof(this.dataIndex[row.id]) != 'object' )
 				continue;
+			if( this.useAjaxLoading ) {
+				row.blockId = this.dataIndex[row.id].blockId;
+				invalidateBlocks[row.blockId] = true;
+			}
 			data[idIndex[row.id]] = row;
 			this.dataIndex[row.id] = row;
 			updated = true;
 		}
 
 		if( updated ) {
-			this.reloadData(false);
-			this.update();
+			if( this.useAjaxLoading ) {
+				for( i in invalidateBlocks )
+					this.generateDataBlockHtml(i, updateDom);
+			}
+			else
+				this.reloadData(false);
+			if( updateDom )
+				this.update();
 		}
 	};
 
@@ -3262,8 +3277,8 @@
 					case "getRow": retVal = instance.getRow(hgArgs[1]); break;
 					case "addRow": instance.addRow(hgArgs[1]); break;
 					case "addRows": instance.addRows(hgArgs[1]); break;
-					case "updateRow": instance.updateRow(hgArgs[1]); break;
-					case "updateRows": instance.updateRows(hgArgs[1]); break;
+					case "updateRow": instance.updateRow(hgArgs[1], (hgArgs.length > 1) ? hgArgs[2] : true); break;
+					case "updateRows": instance.updateRows(hgArgs[1], (hgArgs.length > 1) ? hgArgs[2] : true); break;
 					case "addOrUpdateRow": instance.addOrUpdateRow(hgArgs[1]); break;
 					case "removeRow": instance.removeRow(hgArgs[1]); break;
 					case "sort": instance.sort(hgArgs[1], hgArgs[2]); break;
