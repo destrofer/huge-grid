@@ -7,14 +7,157 @@
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
+
+/**
+ * @var {function} initSpecialInputs
+ **/
+
+/**
+ * @var {function(async: boolean)} createFilter
+ */
+
 ;(function($){
+	/**
+	 * @typedef {{
+	 * 		id: string,
+	 * 		content: string,
+	 * 		width?: number,
+	 * }} HugeGridColumn
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		success: boolean,
+	 * 		totalRows: number,
+	 * 		totalUnfilteredRows: number,
+	 * 		firstRow: number,
+	 * 		lastRow: number,
+	 * 		dataSession: string,
+	 * 		data: Array<HugeGridRow>
+	 * }} HugeGridAjaxResponse
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		rowClass: string
+	 * }} HugeGridFooter
+	 */
+
+	/**
+	 * @typedef {Array.<HugeGridColumn>} HugeGridHeader
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		move: function
+	 * }} HugeGridTracker
+	 */
+	/**
+	 * @typedef {{
+	 * 		id: string|number
+	 * 		content: Object.<string, string|number>,
+	 * 		titles: Object.<string, string|number>,
+	 * 		classes: Object.<string, string>,
+	 * 		tooltips: Object.<string, string|number>,
+	 * 		data: Object.<string, *>,
+	 * 		sortData: Object.<string, string|number>,
+	 *
+	 * 		blockId: number
+	 * }} HugeGridRow
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		url: string,
+	 * 		params?: object
+	 * }} HugeGridSortTrackingOptions
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		id: null|string,
+	 * 		splitterWidth: number,
+	 * 		header: Array.<HugeGridColumn>,
+	 * 		fixedColumns: number,
+	 * 		headRowHeight: number,
+	 * 		filterRowHeight: number,
+	 * 		markedColumnBackground: string,
+	 * 		sortKey: null|string,
+	 * 		sortDesc: boolean,
+	 * 		noSort: boolean,
+	 * 		autoSort: boolean,
+	 * 		sortRowHeight: number,
+	 * 		sortMarkup: string,
+	 * 		noSortMarkup: string,
+	 * 		data: Array.<HugeGridRow>|string,
+	 * 		dataType: string,
+	 * 		dataParam: null,
+	 * 		filter: null,
+	 * 		rowHeight: number,
+	 * 		rowCount: number,
+	 * 		blockSize: number,
+	 * 		hBlockSize: number,
+	 * 		superblockSize: number,
+	 * 		blockLevels: number,
+	 * 		maxConcurrentLoads: number,
+	 * 		preloadRows: number,
+	 * 		loadingBlockHeadMarkup: string,
+	 * 		loadingBlockContMarkup: string,
+	 * 		rangeBorderWidth: number,
+	 * 		selectionMode: string,
+	 * 		selectionMinColumnId: null,
+	 * 		selectionMaxColumnId: null,
+	 * 		footer: null,
+	 * 		footerHeight: number,
+	 * 		hScrollPos: number,
+	 * 		vScrollPos: number,
+	 * 		hScrollHeight: number,
+	 * 		vScrollWidth: number,
+	 * 		hScrollSpeed: number,
+	 * 		vScrollSpeed: number,
+	 * 		hScrollMarkup: string,
+	 * 		vScrollMarkup: string,
+	 * 		trackSorting: HugeGridSortTrackingOptions,
+	 * 		onSort: function,
+	 * 		onMarkChange: function,
+	 * 		onFilterChange: function,
+	 * 		onBeforeWheelScroll: function,
+	 * 		onMouseDown: function,
+	 * 		onMouseUp: function,
+	 * 		onSelectionStart: function,
+	 * 		onSelectionChange: function,
+	 * 		onSelectionEnd: function,
+	 * 		onClick: function,
+	 * 		onDblClick: function,
+	 * 		onOver: function,
+	 * 		onOut: function,
+	 * 		onSelect: function,
+	 * 		onDeselect: function,
+	 * 		onLoad: function,
+	 * 		onUnload: function,
+	 * 		onScroll: function,
+	 * 		onError: function,
+	 * 		onBlockHide: function,
+	 * 		onRowCountUpdate: function,
+	 * 		onBeforeRequestData: function,
+	 * 		onRowDataReceived: function,
+	 * 		sortFunctions: {
+	 * 			string: string,
+	 * 			numeric: numeric
+	 * 		},
+	 * }} HugeGridOptions
+	 */
+
+	/**
+	 * @param {string} selector
+	 * @param {HugeGridOptions} options
+	 * @constructor
+	 */
 	var HugeGrid = function(selector, options) {
 		var $this = $(selector);
 		$this.data('hugeGrid', this);
 		$this.addClass('huge-grid'); // one of first things to be done. otherwise some DOM event listeners might fail
 		this.$grid = $this;
-		var grid = this;
-
 		var i, j, col;
 
 		this.options = $.extend({}, HugeGrid.defaults, options);
@@ -53,7 +196,7 @@
 
 		this.dataParam = this.options.dataParam;
 
-		if( this.options.filter !== null && typeof this.options.filter == 'object' ) {
+		if( this.options.filter !== null && typeof this.options.filter === 'object' ) {
 			for( i in this.options.filter ) {
 				if( !this.options.filter.hasOwnProperty(i) )
 					continue;
@@ -73,8 +216,8 @@
 			var type = this.columnIndex[i].filter.type;
 			var val = this.columnIndex[i].filter.value;
 			if( val !== null && val !== '' ) {
-				if( type == 'number' || type == 'date' || type == 'time' ) {
-					if( typeof val != 'object' ) {
+				if( type === 'number' || type === 'date' || type === 'time' ) {
+					if( typeof val !== 'object' ) {
 						this.filterData[i] = {from: val, to: val};
 					}
 					else {
@@ -87,7 +230,7 @@
 							this.filterData[i] = fd;
 					}
 				}
-				else if( typeof val == 'object' ) {
+				else if( typeof val === 'object' ) {
 					if( !val.hasOwnProperty('length') || val.length > 0 )
 						this.filterData[i] = val;
 				}
@@ -96,7 +239,7 @@
 			}
 		}
 
-		if( typeof(this.options.data) == "string" ) {
+		if( typeof this.options.data === "string" ) {
 			this.useAjaxLoading = true;
 			this.readUrl = this.options.data; // @todo replace by another options for CRUD model
 			this.data = [];
@@ -123,7 +266,7 @@
 			innerHeadHeight += this.options.filterRowHeight + 1;
 
 		this.fullHeadHeight = innerHeadHeight + this.options.splitterWidth;
-		var fullFootHeight = (this.options.footer === null || typeof(this.options.footer) != 'object' || !this.options.footer.hasOwnProperty('content')) ? 0 : (this.options.footerHeight + this.options.splitterWidth);
+		var fullFootHeight = (this.options.footer === null || typeof this.options.footer !== 'object' || !this.options.footer.hasOwnProperty('content')) ? 0 : (this.options.footerHeight + this.options.splitterWidth);
 
 		this.contentHeight = (this.options.rowHeight + 1) * this.rowCount - 1;
 
@@ -131,7 +274,7 @@
 
 		var thisWidth = $vis.width();
 		var thisHeight = $this.height();
-		if( !this.useAjaxLoading && thisHeight == 0 ) {
+		if( !this.useAjaxLoading && thisHeight === 0 ) {
 			thisHeight = this.contentHeight + this.fullHeadHeight + fullFootHeight + this.options.hScrollHeight;
 			$this.css({height: thisHeight + 'px' });
 			this.options.vScrollWidth = 0;
@@ -348,7 +491,7 @@
 		this.hScrollMax = Math.max(this.contentWidth - this.containerWidth - 1, 0);
 		this.hScrollSize = this.$hScrollTumb.parent().innerWidth() - this.$hScrollTumb.outerWidth();
 
-		if( this.hScrollMax == 0 )
+		if( this.hScrollMax === 0 )
 			this.$hScroll.css({display: 'none'});
 
 		this.blocks = [];
@@ -360,7 +503,7 @@
 
 		this.loadQueue = {load: 0, req: {}};
 
-		if( this.options.fixedColumns == 0 ) {
+		if( this.options.fixedColumns === 0 ) {
 			this.$headCol.css({display: 'none'});
 			this.$headCorner.css({display: 'none'});
 			if( this.$footerCorner )
@@ -413,7 +556,7 @@
 	HugeGrid.prototype.filterData = null;
 
 	/**
-	 * @type {object}
+	 * @type {HugeGridOptions}
 	 */
 	HugeGrid.prototype.options = null;
 
@@ -598,109 +741,109 @@
 	HugeGrid.prototype.vScrollSize = 0;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$grid = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$rules = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headCorner = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headRow = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headCol = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$container = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$vScroll = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$hScroll = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$content = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headCornerContent = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headRowContent = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headColContent = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$headColBorder = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$footerCorner = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$footerRow = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$footerRowContent = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$dropDowns = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$hScrollTumb = null;
 
 	/**
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$vScrollTumb = null;
 
 	/**
 	 * Selection area element in left part of the grid
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$selection1 = null;
 
 	/**
 	 * Selection area element in right part of the grid
-	 * @type {jQuery}
+	 * @type {JQuery}
 	 */
 	HugeGrid.prototype.$selection2 = null;
 
@@ -710,7 +853,7 @@
 	HugeGrid.prototype.selection = null;
 
 	/**
-	 * @type {object}
+	 * @type {HugeGridTracker}
 	 */
 	HugeGrid.prototype.tracker = null;
 
@@ -756,7 +899,7 @@
 		e.preventDefault();
 		e.stopImmediatePropagation();
 		this.scrollDragInfo.currentPos = this.scrollDragInfo.initialPos + e.pageX - this.scrollDragInfo.initialMousePos;
-		if( this.scrollDragInfo.currentPos == this.scrollDragInfo.prevPos )
+		if( this.scrollDragInfo.currentPos === this.scrollDragInfo.prevPos )
 			return;
 		this.scrollDragInfo.prevPos = this.scrollDragInfo.currentPos;
 		if( this.scrollDragInfo.currentPos < 0 )
@@ -764,7 +907,7 @@
 		if( this.scrollDragInfo.currentPos > this.hScrollSize )
 			this.scrollDragInfo.currentPos = this.hScrollSize;
 		this.$hScrollTumb.css({
-			left: this.scrollDragInfo.currentPos + "px",
+			left: this.scrollDragInfo.currentPos + "px"
 		});
 		
 		var oldpos = this.hScrollPos;
@@ -777,7 +920,7 @@
 
 		this.refreshView();
 
-		if( oldpos != this.hScrollPos && typeof(this.options.onScroll) == "function" )
+		if( oldpos !== this.hScrollPos && typeof(this.options.onScroll) === "function" )
 			this.options.onScroll.call(grid, this.hScrollPos, this.vScrollPos);
 	};
 			
@@ -805,7 +948,7 @@
 		e.preventDefault();
 		e.stopImmediatePropagation();
 		this.scrollDragInfo.currentPos = this.scrollDragInfo.initialPos + e.pageY - this.scrollDragInfo.initialMousePos;
-		if( this.scrollDragInfo.currentPos == this.scrollDragInfo.prevPos )
+		if( this.scrollDragInfo.currentPos === this.scrollDragInfo.prevPos )
 			return;
 		this.scrollDragInfo.prevPos = this.scrollDragInfo.currentPos;
 		if( this.scrollDragInfo.currentPos < 0 )
@@ -813,7 +956,7 @@
 		if( this.scrollDragInfo.currentPos > this.vScrollSize )
 			this.scrollDragInfo.currentPos = this.vScrollSize;
 		this.$vScrollTumb.css({
-			top: this.scrollDragInfo.currentPos + "px",
+			top: this.scrollDragInfo.currentPos + "px"
 		});
 
 		var oldpos = this.vScrollPos;
@@ -826,7 +969,7 @@
 		this.refreshView();
 		this.processLoadingQueue();
 
-		if( oldpos != this.vScrollPos && typeof(this.options.onScroll) == "function" )
+		if( oldpos !== this.vScrollPos && typeof this.options.onScroll === "function" )
 			this.options.onScroll.call(grid, this.hScrollPos, this.vScrollPos);
 	};
 	
@@ -839,15 +982,15 @@
 	
 	/**
 	 *
-	 * @param {jQuery} $target
+	 * @param {JQuery} $target
 	 * @param {string} eventName
-	 * @param {object} eventArgs
-	 * @return {jQuery.Event}
+	 * @param {Object.<string, *>} [eventArgs]
+	 * @return {JQueryEventObject|JQuery.Event}
 	 */
 	HugeGrid.prototype.triggerEvent = function($target, eventName, eventArgs) {
 		var e = jQuery.Event(eventName + '.hugegrid');
 		e.grid = this.$grid;
-		if( typeof eventArgs == 'object' )
+		if( typeof eventArgs === 'object' )
 			for( var i in eventArgs )
 				if( eventArgs.hasOwnProperty(i) )
 					e[i] = eventArgs[i];
@@ -867,7 +1010,7 @@
 
 		var scpos, stpos, scrolled = false;
 
-		if( this.hScrollPos != hPos ) {
+		if( this.hScrollPos !== hPos ) {
 			this.hScrollPos = hPos;
 			scpos = '-' + this.hScrollPos + "px";
 			stpos = Math.floor(this.hScrollPos * this.hScrollSize / this.hScrollMax) + "px";
@@ -879,7 +1022,7 @@
 			scrolled = true;
 		}
 
-		if( this.vScrollPos != vPos ) {
+		if( this.vScrollPos !== vPos ) {
 			this.vScrollPos = vPos;
 			scpos = '-' + this.vScrollPos + "px";
 			stpos = Math.floor(this.vScrollPos * this.vScrollSize / this.vScrollMax);
@@ -896,14 +1039,14 @@
 			this.processLoadingQueue();
 		}
 
-		if( scrolled && typeof(this.options.onScroll) == "function" )
+		if( scrolled && typeof(this.options.onScroll) === "function" )
 			this.options.onScroll.call(this, this.hScrollPos, this.vScrollPos);
 		
 		return scrolled;
 	};
 
 	HugeGrid.prototype.sort = function(sortKey, sortDesc) {
-		if( typeof(this.options.trackSorting) == 'object' && this.options.trackSorting ) {
+		if( typeof(this.options.trackSorting) === 'object' && this.options.trackSorting ) {
 			var data = this.options.trackSorting.hasOwnProperty('params') ? $.extend({}, this.options.trackSorting.params) : {};
 			data.sortKey = sortKey;
 			data.sortDesc = sortDesc ? 1 : 0;
@@ -985,7 +1128,7 @@
 					rowFootHtml += this.getFooterCellHtml(this.options.header[i], rightClass);
 
 				hbIdx = Math.floor(hb / this.options.hBlockSize);
-				if( hbIdx != prevHbIdx ) {
+				if( hbIdx !== prevHbIdx ) {
 					if( prevHbIdx >= 0 )
 						this.hBlocks.push([hbPos, hbPos + (hbWidth ? (hbWidth - 1) : 0)]);
 
@@ -997,7 +1140,7 @@
 				var hcw = this.getHeadCellWidth(this.options.header[i]);
 				hbWidth += (hcw > 0) ? (hcw + 1) : 0;
 			}
-			cssRules += this.getCellCSS(this.options.header[i], '');
+			cssRules += this.getCellCSS(this.options.header[i]);
 		}
 
 		if( prevHbIdx >= 0 )
@@ -1041,7 +1184,7 @@
 			})
 			.on('keydown', ':input.hg-filter-input', function(e) {
 				var key = e.keyCode || e.which;
-				if( key == 13 ) {
+				if( key === 13 ) {
 					$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
 					e.preventDefault();
 					e.stopPropagation();
@@ -1050,20 +1193,20 @@
 			.on('change', ':input.hg-filter-input', function(e) {
 				$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
 			})
-			.on('click', '.hg-sort-asc', function(e) {
+			.on('click', '.hg-sort-asc', function() {
 				var $sort = $(this).closest('.hg-sort');
 				var $grid = $sort.closest('.huge-grid');
 				var inst = $grid.data('hugeGrid');
 				inst.sort($sort.data('key'), false);
 			})
-			.on('click', '.hg-sort-desc', function(e) {
+			.on('click', '.hg-sort-desc', function() {
 				var $sort = $(this).closest('.hg-sort');
 				var $grid = $sort.closest('.huge-grid');
 				var inst = $grid.data('hugeGrid');
 				inst.sort($sort.data('key'), true);
 			})
-			.on('click', '.hg-ranged-filter-input', function(e) {
-				if( HugeGrid.$activeDropDown != null )
+			.on('click', '.hg-ranged-filter-input', function() {
+				if( HugeGrid.$activeDropDown !== null )
 					HugeGrid.$activeDropDown.removeClass('active');
 
 				var $target = $(this);
@@ -1091,7 +1234,7 @@
 			.on("click", function(e) { $(this).data("hugeGrid").onClick(e); })
 			.on("dblclick", function(e) { $(this).data("hugeGrid").onDblClick(e); });
 
-		if( typeof initSpecialInputs == 'function' )
+		if( typeof initSpecialInputs === 'function' )
 			initSpecialInputs();
 
 		this.triggerEvent(this.$grid, 'init');
@@ -1100,13 +1243,12 @@
 	};
 
 	HugeGrid.prototype.updateHorizontalBlocks = function() {
-		var cssRules = '';
-		var hb, hbIdx, prevHbIdx = -1, hbPos = 0, hbWidth = 0;
+		var hbIdx, prevHbIdx = -1, hbPos = 0, hbWidth = 0;
 
 		this.hBlocks = [];
 		for( var i = this.options.fixedColumns, il = this.options.header.length; i < il; i++ ) {
 			hbIdx = Math.floor((i - this.options.fixedColumns) / this.options.hBlockSize);
-			if( hbIdx != prevHbIdx ) {
+			if( hbIdx !== prevHbIdx ) {
 				if( prevHbIdx >= 0 )
 					this.hBlocks.push([hbPos, hbPos + (hbWidth ? (hbWidth - 1) : 0)]);
 
@@ -1134,7 +1276,7 @@
 		if( this.triggerEvent($target, 'markchange', {originalEvent: e, gridTarget: target}).isPropagationStopped() )
 			return;
 
-		if( typeof(this.options.onMarkChange) == "function" )
+		if( typeof(this.options.onMarkChange) === "function" )
 			this.options.onMarkChange.call(this, target);
 	};
 
@@ -1171,10 +1313,10 @@
 
 		var res = true;
 		if( !fe.isPropagationStopped() )
-			if( typeof(this.options.onFilterChange) == "function" )
+			if( typeof(this.options.onFilterChange) === "function" )
 				res = this.options.onFilterChange.call(this, target);
 
-		if( (typeof res != 'boolean' || res === true) && !fe.isDefaultPrevented() )
+		if( (typeof res !== 'boolean' || res === true) && !fe.isDefaultPrevented() )
 			this.reloadData(false);
 	};
 
@@ -1188,7 +1330,7 @@
 
 	HugeGrid.prototype.onClick = function(e) {
 		if( this.temporaryPreventClick ) {
-			temporaryPreventClick = false;
+			this.temporaryPreventClick = false;
 			e.stopImmediatePropagation();
 			e.preventDefault();
 			return;
@@ -1198,7 +1340,7 @@
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		target.event = e;
-		if( typeof(this.options.onClick) == "function" )
+		if( typeof(this.options.onClick) === "function" )
 			this.options.onClick.call(this, target);
 	};
 
@@ -1208,7 +1350,7 @@
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		target.event = e;
-		if( typeof(this.options.onDblClick) == "function" )
+		if( typeof(this.options.onDblClick) === "function" )
 			this.options.onDblClick.call(this, target);
 	};
 
@@ -1217,16 +1359,16 @@
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		target.event = e;
-		if( typeof(this.options.onOver) == "function" )
+		if( typeof(this.options.onOver) === "function" )
 			this.options.onOver.call(this, target);
 		if( !target.event.isDefaultPrevented() ) {
-			if( typeof(target.rowIdx) != 'undefined' && target.rowIdx !== null )
+			if( typeof(target.rowIdx) !== 'undefined' && target.rowIdx !== null )
 				$('#hgr1_' + this.id + '_' + target.rowIdx + ',#hgr2_' + this.id + '_' + target.rowIdx).addClass("hg-over");
 		}
 
-		if( target.type == 'data' ) {
+		if( target.type === 'data' ) {
 			if( this.tracker ) {
-				if( typeof this.tracker.move == 'function' )
+				if( typeof this.tracker.move === 'function' )
 					this.tracker.move.call(this.tracker, target, this);
 			}
 			else if( this.selection !== null && this.selection.active ) {
@@ -1235,9 +1377,9 @@
 					col = this.columnList[this.selectionMinColumnIndex];
 				if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
 					col = this.columnList[this.selectionMaxColumnIndex];
-				var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
+				var row = (this.options.selectionMode === 'single') ? this.selection.startedAt.row : target.rowIdx;
 
-				if( typeof(this.options.onSelectionChange) == "function" )
+				if( typeof(this.options.onSelectionChange) === "function" )
 					this.options.onSelectionChange.call(this, target);
 
 				if( target.event.isDefaultPrevented() )
@@ -1248,9 +1390,9 @@
 		}
 
 		if( (this.selection === null || !this.selection.active) && !this.tracker ) {
-			if( target.type == 'data' && target.row.hasOwnProperty('tooltips') && target.row.tooltips.hasOwnProperty(target.colId) )
+			if( target.type === 'data' && target.row.hasOwnProperty('tooltips') && target.row.tooltips.hasOwnProperty(target.colId) )
 				HugeGrid.showToolTip(e, target.type + '.' + target.rowId + '.' + target.colId, target.row.tooltips[target.colId]);
-			else if( target.type == 'range' && target.range.hasOwnProperty('tooltip') )
+			else if( target.type === 'range' && target.range.hasOwnProperty('tooltip') )
 				HugeGrid.showToolTip(e, target.type + '.' + target.rowId + '.' + target.rangeId, target.range.tooltip);
 		}
 	};
@@ -1262,10 +1404,10 @@
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		target.event = e;
-		if( typeof(this.options.onOut) == "function" )
+		if( typeof(this.options.onOut) === "function" )
 			this.options.onOut.call(this, target);
 		if( !target.event.isDefaultPrevented() ) {
-			if( typeof(target.rowIdx) != 'undefined' && target.rowIdx !== null )
+			if( typeof(target.rowIdx) !== 'undefined' && target.rowIdx !== null )
 				$('#hgr1_' + this.id + '_' + target.rowIdx + ',#hgr2_' + this.id + '_' + target.rowIdx).removeClass("hg-over");
 		}
 	};
@@ -1276,13 +1418,13 @@
 		var target = this.identifyTarget(e.target);
 		if( target === null ) return;
 		$.hugeGrid.gridTrackingMouseUp = this;
-		if( target.type != 'data' ) return;
+		if( target.type !== 'data' ) return;
 
 		target.event = e;
-		if( typeof(this.options.onMouseDown) == "function" )
+		if( typeof(this.options.onMouseDown) === "function" )
 			this.options.onMouseDown.call(this, target);
 
-		if( !this.tracker && this.options.selectionMode != 'none' && target.type == 'data' ) {
+		if( !this.tracker && this.options.selectionMode !== 'none' && target.type === 'data' ) {
 			if( target.event.isDefaultPrevented() )
 				return;
 
@@ -1291,7 +1433,7 @@
 			if( (this.selectionMinColumnIndex && col.index < this.selectionMinColumnIndex) || (this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex) )
 				return;
 
-			if( typeof(this.options.onSelectionStart) == "function" )
+			if( typeof(this.options.onSelectionStart) === "function" )
 				this.options.onSelectionStart.call(this, target);
 
 			if( target.event.isDefaultPrevented() )
@@ -1302,6 +1444,7 @@
 	};
 
 	HugeGrid.prototype.onMouseUp = function(e) {
+		var target;
 		if( this.tracker ) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -1312,11 +1455,11 @@
 			var tracker = this.tracker;
 			this.tracker = null;
 
-			var target = this.identifyTarget(e.target);
+			target = this.identifyTarget(e.target);
 
 			this.$grid.removeClass('hg-tracking');
 
-			if( typeof tracker.end == 'function' )
+			if( typeof tracker.end === 'function' )
 				tracker.end.call(tracker, target, this);
 		}
 
@@ -1324,14 +1467,14 @@
 			return;
 
 		if( this.selection !== null && this.selection.active ) {
-			var target = this.identifyTarget(e.target);
+			target = this.identifyTarget(e.target);
 
-			if( target == null )
+			if( target === null )
 				target = { type: 'outside' };
 
 			target.event = e;
 
-			if( typeof(this.options.onSelectionEnd) == "function" )
+			if( typeof(this.options.onSelectionEnd) === "function" )
 				this.options.onSelectionEnd.call(this, target);
 
 			if( target.event.isDefaultPrevented() )
@@ -1344,7 +1487,7 @@
 				this.autoScroll = null;
 			}
 
-			if( typeof(this.options.onSelect) == 'function' )
+			if( typeof(this.options.onSelect) === 'function' )
 				this.options.onSelect.call(this, this.selection);
 		}
 	};
@@ -1356,7 +1499,7 @@
 	};
 
 	HugeGrid.prototype.autoScrollTick = function(e) {
-		if( typeof(e) != 'object' && this.autoScroll === null )
+		if( typeof(e) !== 'object' && this.autoScroll === null )
 			return;
 		if( !this.tracker && (!this.selection || !this.selection.active) )
 			return;
@@ -1367,7 +1510,7 @@
 				lastTick: (new Date()).getTime()
 			};
 		}
-		if( typeof(e) == 'object' ) {
+		if( typeof(e) === 'object' ) {
 			this.autoScroll.cursorX = e.pageX;
 			this.autoScroll.cursorY = e.pageY;
 		}
@@ -1379,8 +1522,8 @@
 		var pos = this.$container.offset();
 		var w = Math.min(100, this.containerWidth / 2);
 		var h = Math.min(100, this.containerHeight / 2);
-		if( w == 0 ) w = 1; // should not happen
-		if( h == 0 ) h = 1; // should not happen
+		if( w === 0 ) w = 1; // should not happen
+		if( h === 0 ) h = 1; // should not happen
 
 		var deltaX = 0, deltaY = 0;
 		var speed = 500;
@@ -1389,15 +1532,15 @@
 			deltaX = speed * (this.autoScroll.cursorX - pos.left - w) * deltaTime / w;
 		else if( this.autoScroll.cursorX > pos.left + this.containerWidth - w )
 			deltaX = speed * (this.autoScroll.cursorX - pos.left - this.containerWidth + w) * deltaTime / w;
-		if( this.selectionMode != 'single' ) {
+		if( this.selectionMode !== 'single' ) {
 			if( this.autoScroll.cursorY < pos.top + h )
 				deltaY = speed * (this.autoScroll.cursorY - pos.top - h) * deltaTime / w;
 			else if( this.autoScroll.cursorY > pos.top + this.containerHeight - h )
 				deltaY = speed * (this.autoScroll.cursorY - pos.top - this.containerHeight + h) * deltaTime / w;
 		}
 
-		if( deltaX != 0 || deltaY != 0 ) {
-			if( this.autoScroll.timer == null ) {
+		if( deltaX !== 0 || deltaY !== 0 ) {
+			if( this.autoScroll.timer === null ) {
 				var thisObj = this;
 				this.autoScroll.timer = setInterval(function() {
 					thisObj.autoScrollTick();
@@ -1408,9 +1551,9 @@
 			var $win = $(window);
 			var elem = document.elementFromPoint(this.autoScroll.cursorX - $win.scrollLeft(), this.autoScroll.cursorY - $win.scrollTop());
 			var target = this.identifyTarget(elem);
-			if( target !== null && target.type != 'range' ) {
+			if( target !== null && target.type !== 'range' ) {
 				if( this.tracker ) {
-					if( typeof this.tracker.move == 'function' )
+					if( typeof this.tracker.move === 'function' )
 						this.tracker.move.call(this.tracker, target, this);
 				}
 				else {
@@ -1419,7 +1562,7 @@
 						col = this.columnList[this.selectionMinColumnIndex];
 					if( this.selectionMaxColumnIndex && col.index > this.selectionMaxColumnIndex )
 						col = this.columnList[this.selectionMaxColumnIndex];
-					var row = (this.options.selectionMode == 'single') ? this.selection.startedAt.row : target.rowIdx;
+					var row = (this.options.selectionMode === 'single') ? this.selection.startedAt.row : target.rowIdx;
 
 					target.event = {
 						target: elem,
@@ -1428,7 +1571,7 @@
 						isDefaultPrevented: function() { return this.defaultPrevented; }
 					};
 
-					if( typeof(this.options.onSelectionChange) == "function" )
+					if( typeof(this.options.onSelectionChange) === "function" )
 						this.options.onSelectionChange.call(this, target);
 
 					if( target.event.isDefaultPrevented() )
@@ -1438,7 +1581,7 @@
 				}
 			}
 		}
-		else if( this.autoScroll.timer != null ) {
+		else if( this.autoScroll.timer !== null ) {
 			clearInterval(this.autoScroll.timer);
 			this.autoScroll = null;
 		}
@@ -1448,7 +1591,7 @@
 		var prevSelection = this.selection;
 		this.selection = null;
 
-		if( prevSelection !== null && typeof(this.options.onDeselect) == 'function' )
+		if( prevSelection !== null && typeof(this.options.onDeselect) === 'function' )
 			this.options.onDeselect.call(this, prevSelection);
 
 		this.updateSelectionDisplay();
@@ -1456,7 +1599,7 @@
 
 	HugeGrid.prototype.select = function(rowIdx1, colId1, rowIdx2, colId2, active) {
 		var t;
-		if( typeof(active) != 'boolean' )
+		if( typeof(active) !== 'boolean' )
 			active = false;
 		if( rowIdx1 > rowIdx2 ) { t = rowIdx1; rowIdx1 = rowIdx2; rowIdx2 = t; }
 		var col1 = this.getHeader(colId1);
@@ -1472,7 +1615,7 @@
 		this.selection.from = { row: rowIdx1, column: col1 };
 		this.selection.to = { row: rowIdx2, column: col2 };
 
-		if( typeof(this.options.onSelect) == 'function' )
+		if( typeof(this.options.onSelect) === 'function' )
 			this.options.onSelect.call(this, this.selection);
 
 		this.updateSelectionDisplay();
@@ -1570,7 +1713,7 @@
 			$rowR.removeClass('hg-marked-row');
 		}
 
-		if( typeof(manual) != 'boolean' || !manual )
+		if( typeof(manual) !== 'boolean' || !manual )
 			$('.hg-mark', $rowL).prop('checked', mark);
 
 		this.data[rowIdx].marked = mark;
@@ -1635,17 +1778,17 @@
 				continue;
 			i++;
 			filterType = this.columnIndex[k].filter.type;
-			if( filterType == 'text' )
+			if( filterType === 'text' )
 				filter[k] = filter[k].toLowerCase();
-			else if( filterType == 'date' || filterType == 'time' || filterType == 'number' ) {
-				if( typeof(filter[k]) != 'object' )
+			else if( filterType === 'date' || filterType === 'time' || filterType === 'number' ) {
+				if( typeof(filter[k]) !== 'object' )
 					filter[k] = {from: filter[k], to: filter[k]};
 
-				if( filterType == 'date' ) {
+				if( filterType === 'date' ) {
 					filter[k].from = filter[k].hasOwnProperty('from') ? HugeGrid.parseDate(filter[k].from) : null;
 					filter[k].to = filter[k].hasOwnProperty('to') ? HugeGrid.parseDate(filter[k].to) : null;
 				}
-				else if( filterType == 'number' ) {
+				else if( filterType === 'number' ) {
 					filter[k].from = (!filter[k].hasOwnProperty('from') || filter[k].from === null) ? null : parseFloat(filter[k].from);
 					if( isNaN(filter[k].from) )
 						filter[k].from = null;
@@ -1664,7 +1807,7 @@
 			}
 		}
 
-		if( i == 0 ) {
+		if( i === 0 ) {
 			this.data = src = this.options.data;
 			this.dataIndex = {};
 			for( i in src ) {
@@ -1691,43 +1834,43 @@
 					filterVal = filter[k];
 					val = (row.hasOwnProperty('data') && row.data.hasOwnProperty(k)) ? row.data[k] : ((row.hasOwnProperty('content') && row.content.hasOwnProperty(k)) ? row.content[k] : null);
 
-					if( filterType == 'text' ) {
+					if( filterType === 'text' ) {
 						if( val === null || val.toLowerCase().indexOf(filterVal) < 0 ) {
 							ok = false;
 							break;
 						}
 					}
-					else if( filterType == 'date' ) {
+					else if( filterType === 'date' ) {
 						val = HugeGrid.parseDate(val);
 						if( val === null || (filterVal.hasOwnProperty('from') && val < filterVal.from) || (filterVal.hasOwnProperty('to') && val > filterVal.to) ) {
 							ok = false;
 							break;
 						}
 					}
-					else if( filterType == 'number' ) {
+					else if( filterType === 'number' ) {
 						val = parseFloat(val);
 						if( isNaN(val) || (filterVal.hasOwnProperty('from') && val < filterVal.from) || (filterVal.hasOwnProperty('to') && val > filterVal.to) ) {
 							ok = false;
 							break;
 						}
 					}
-					else if( filterType == 'time' ) {
+					else if( filterType === 'time' ) {
 						if( val === null || (filterVal.hasOwnProperty('from') && val < filterVal.from) || (filterVal.hasOwnProperty('to') && val > filterVal.to) ) {
 							ok = false;
 							break;
 						}
 					}
-					else if( filterType == 'select' ) {
+					else if( filterType === 'select' ) {
 						ok = false;
 						for( j in filterVal )
-							if( filterVal.hasOwnProperty(j) && filterVal[j] == val ) {
+							if( filterVal.hasOwnProperty(j) && filterVal[j] === val ) {
 								ok = true;
 								break;
 							}
 						if( !ok )
 							break;
 					}
-					else if( val != filterVal ) {
+					else if( val !== filterVal ) {
 						ok = false;
 						break;
 					}
@@ -1746,7 +1889,7 @@
 		if( this.triggerEvent(this.$grid, 'sort', {sortKey: this.sortKey, sortDesc: this.sortDesc}).isDefaultPrevented() )
 			return;
 
-		if( typeof(this.options.onSort) == "function" )
+		if( typeof(this.options.onSort) === "function" )
 			if( this.options.onSort.call(this, this.sortKey, this.sortDesc) )
 				return;
 
@@ -1770,6 +1913,8 @@
 		}
 
 		for( i in this.blocks[this.options.blockLevels - 1] ) {
+			if( !this.blocks[this.options.blockLevels - 1].hasOwnProperty(i) )
+				continue;
 			var block = this.blocks[this.options.blockLevels - 1][i];
 			if( block.visible )
 				$("#hgb1_" + this.id + '_' + i + ", #hgb2_" + this.id + '_' + i).remove();
@@ -1789,7 +1934,7 @@
 	};
 
 	HugeGrid.prototype.getHeadCellLevels = function(cellInfo) {
-		if( cellInfo.children == null ) return 1;
+		if( cellInfo.children === null ) return 1;
 		var levels = 0;
 		for(var i = cellInfo.children.length - 1; i >= 0; i--)
 			levels = Math.max(levels, this.getHeadCellLevels(cellInfo.children[i]));
@@ -1798,7 +1943,7 @@
 
 	HugeGrid.prototype.getHeadCellWidth = function(cellInfo) {
 		if( cellInfo.hidden ) return 0;
-		if( cellInfo.children == null ) return cellInfo.width;
+		if( cellInfo.children === null ) return cellInfo.width;
 		var width = 0;
 		for(var i = cellInfo.children.length - 1; i >= 0; i--) {
 			var w = this.getHeadCellWidth(cellInfo.children[i]);
@@ -1816,7 +1961,7 @@
 	*/
 	HugeGrid.prototype.getHeadCellHtml = function(cellInfo, rowHeight, headHeight, ignoreChildren, rightClass, bottomClass) {
 		var html = '';
-		if( cellInfo.children == null || ignoreChildren ) {
+		if( cellInfo.children === null || ignoreChildren ) {
 			var ccls = ' ' + this.getColumnClasses(cellInfo.id);
 			var title = cellInfo.hasOwnProperty('title') ? cellInfo.title : '';
 			html += '<div id="hghc_' + this.id + '_' + cellInfo.id + '" class="hg-cell hg-th ' + rightClass + ' ' + bottomClass + ' hg-' + this.id + '-ds-' + cellInfo.id + ' hg-' + this.id + '-col-' + cellInfo.id + ccls + '" style="height:' + (headHeight + 1) + 'px;line-height:' + (headHeight - 4) + 'px;" title="' + title + '"><span>' + cellInfo.content + '</span></div>';
@@ -1826,7 +1971,7 @@
 			html += '<div id="hghm_' + this.id + '_' + cellInfo.id + '" class="hg-th-multi hg-' + this.id + '-col-' + cellInfo.id + '" style="width:' + (hcw + 1) + 'px;height:' + (headHeight + 1) + 'px;">';
 			html += this.getHeadCellHtml(cellInfo, rowHeight, rowHeight, true, rightClass, '');
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getHeadCellHtml(cellInfo.children[j], rowHeight, headHeight - rowHeight - 1, false, ((i == 0) ? rightClass : ''), bottomClass);
+				html += this.getHeadCellHtml(cellInfo.children[j], rowHeight, headHeight - rowHeight - 1, false, ((i === 0) ? rightClass : ''), bottomClass);
 			html += '</div>';
 		}
 		return html;
@@ -1834,13 +1979,13 @@
 
 	HugeGrid.prototype.getFilterCellDropDownHtml = function(cellInfo) {
 		var html = '', i, j, from, to;
-		if( cellInfo.children == null ) {
+		if( cellInfo.children === null ) {
 			var filter = cellInfo.filter;
 			var colId = 'data-col="' + HugeGrid.htmlspecialchars(cellInfo.id) + '"';
 
-			if( filter && (filter.type == 'date' || filter.type == 'time' || filter.type == 'number') ) {
+			if( filter && (filter.type === 'date' || filter.type === 'time' || filter.type === 'number') ) {
 				if( filter.hasOwnProperty('value') ) {
-					if( typeof filter.value != 'object' )
+					if( typeof filter.value !== 'object' )
 						from = to = filter.value;
 					else {
 						from = filter.value.hasOwnProperty('from') ? filter.value.from : '';
@@ -1888,8 +2033,8 @@
 	};
 
 	HugeGrid.prototype.getFilterCellHtml = function(cellInfo, rightClass, bottomClass) {
-		var html = '', i, j, from, to;
-		if( cellInfo.children == null ) {
+		var html = '', i, j;
+		if( cellInfo.children === null ) {
 			var ccls = ' ' + this.getColumnClasses(cellInfo.id);
 			var markup = '';
 			var filter = cellInfo.filter;
@@ -1915,27 +2060,27 @@
 					}
 					case 'select': {
 						var idx = {};
-						if( filter.hasOwnProperty('value') && filter.value && typeof(filter.value) == 'object' ) {
+						if( filter.hasOwnProperty('value') && filter.value && typeof(filter.value) === 'object' ) {
 							for( i in filter.value )
 								if( filter.value.hasOwnProperty(i) )
 									idx[filter.value[i]] = i;
 						}
 						markup += '<select class="hg-filter-input hg-filter-select custom-select csel-dropdown" multiple="multiple" ' + colId + '>';
 
-						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) == 'object' ) {
+						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) === 'object' ) {
 							for( i in filter.empty )
 								if( filter.empty.hasOwnProperty(i) ) {
-									if( typeof filter.empty[i] == 'object' )
+									if( typeof filter.empty[i] === 'object' )
 										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.empty[i].value) + '"' + (idx.hasOwnProperty(filter.empty[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i].text) + '</option>';
 									else
 										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i]) + '</option>';
 								}
 						}
 
-						if( filter.hasOwnProperty('options') && filter.options && typeof(filter.options) == 'object' ) {
+						if( filter.hasOwnProperty('options') && filter.options && typeof(filter.options) === 'object' ) {
 							for( i in filter.options )
 								if( filter.options.hasOwnProperty(i) ) {
-									if( typeof filter.options[i] == 'object' )
+									if( typeof filter.options[i] === 'object' )
 										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.options[i].value) + '"' + (idx.hasOwnProperty(filter.options[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i].text) + '</option>';
 									else
 										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i]) + '</option>';
@@ -1952,14 +2097,14 @@
 		}
 		else {
 			for( i = 0, j = cellInfo.children.length - 1; i <= j; i++)
-				html += this.getFilterCellHtml(cellInfo.children[i], ((i == j) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
+				html += this.getFilterCellHtml(cellInfo.children[i], ((i === j) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
 		}
 		return html;
 	};
 
 	HugeGrid.getFilterRangeViewHtml = function(data, type) {
 		var from, to;
-		if( typeof data == 'object' ) {
+		if( typeof data === 'object' ) {
 			from = data.hasOwnProperty('from') ? data.from : '';
 			to = data.hasOwnProperty('to') ? data.to : '';
 		}
@@ -1971,12 +2116,12 @@
 		if( to === null )
 			to = '';
 
-		fromText = HugeGrid.htmlspecialchars(from.toString());
-		toText = HugeGrid.htmlspecialchars(to.toString());
+		var fromText = HugeGrid.htmlspecialchars(from.toString());
+		var toText = HugeGrid.htmlspecialchars(to.toString());
 
 		var hasError = false;
 		var f, t;
-		if( type == 'number' ) {
+		if( type === 'number' ) {
 			f = (from === '') ? 0 : parseFloat(from);
 			t = (to === '') ? 0 : parseFloat(to);
 			if( isNaN(f) ) {
@@ -1988,7 +2133,7 @@
 				hasError = true;
 			}
 		}
-		else if( type == 'date' ) {
+		else if( type === 'date' ) {
 			f = HugeGrid.parseDate(from);
 			t = HugeGrid.parseDate(to);
 		}
@@ -1998,7 +2143,7 @@
 		}
 
 		var html;
-		if( from == to )
+		if( from === to )
 			html = fromText;
 		else if( from === '' || from === null )
 			html = '<= ' + toText;
@@ -2015,10 +2160,10 @@
 
 	HugeGrid.prototype.getSortCellHtml = function(cellInfo, rightClass, bottomClass) {
 		var html = '';
-		if( cellInfo.children == null ) {
+		if( cellInfo.children === null ) {
 			var ccls = ' ' + this.getColumnClasses(cellInfo.id);
 			var markup = cellInfo.nosort ? this.options.noSortMarkup : this.options.sortMarkup;
-			if( this.sortKey == cellInfo.id ) {
+			if( this.sortKey === cellInfo.id ) {
 				var mkid = this.sortDesc ? "hg-sort-desc" : "hg-sort-asc";
 				markup = markup.replace(mkid, mkid + " hg-sort-selected");
 			}
@@ -2026,23 +2171,23 @@
 		}
 		else {
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getSortCellHtml(cellInfo.children[j], ((i == 0) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
+				html += this.getSortCellHtml(cellInfo.children[j], ((i === 0) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
 		}
 		return html;
 	};
 
 	HugeGrid.prototype.getDataCellHtml = function(cellInfo, rowIdx, rightClass, bottomClass) {
 		var html = '';
-		if( typeof(this.data[rowIdx]) != "object" )
+		if( typeof(this.data[rowIdx]) !== "object" )
 			return '';
-		if( cellInfo.children == null ) {
+		if( cellInfo.children === null ) {
 			var rowData = this.data[rowIdx];
 			var content = (rowData.hasOwnProperty('content') && rowData.content.hasOwnProperty(cellInfo.id)) ? rowData.content[cellInfo.id] : '';
 			var title = (rowData.hasOwnProperty('titles') && rowData.titles.hasOwnProperty(cellInfo.id)) ? rowData.titles[cellInfo.id] : '';
 			var cls = (rowData.hasOwnProperty('classes') && rowData.classes.hasOwnProperty(cellInfo.id)) ? (' ' + rowData.classes[cellInfo.id]) : '';
 			var ccls = ' ' + this.getColumnClasses(cellInfo.id);
 			if( content !== null ) {
-				if( typeof(content) != 'string' )
+				if( typeof(content) !== 'string' )
 					content = content.toString();
 				content = content.replace('{hg-mark}', '<input type="checkbox" class="hg-mark" />');
 			}
@@ -2052,7 +2197,7 @@
 		}
 		else {
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getDataCellHtml(cellInfo.children[j], rowIdx, ((i == 0) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
+				html += this.getDataCellHtml(cellInfo.children[j], rowIdx, ((i === 0) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
 		}
 		return html;
 	};
@@ -2063,8 +2208,8 @@
 		if( !col1 || !col2 )
 			return '';
 
-		var top = (typeof(range.top) == 'number') ? range.top : 0;
-		var height = (typeof(range.height) == 'number') ? range.height : (this.options.rowHeight - top);
+		var top = (typeof(range.top) === 'number') ? range.top : 0;
+		var height = (typeof(range.height) === 'number') ? range.height : (this.options.rowHeight - top);
 
 		var styles = 'left:' + col1.position + 'px;';
 		styles += 'top:' + top + 'px;';
@@ -2074,18 +2219,18 @@
 		if( range.hasOwnProperty('style') )
 			styles += range.style;
 
-		var extraClass = (typeof(range['class']) == 'string') ? (' ' + range['class']) : '';
-		var title = (typeof(range['title']) == 'string') ? (' title="' + range['title']) + '"' : '';
+		var extraClass = (typeof(range['class']) === 'string') ? (' ' + range['class']) : '';
+		var title = (typeof(range['title']) === 'string') ? (' title="' + range['title']) + '"' : '';
 
 		var html = '<div id="hgrng_' + this.id + '_' + rangeId + '" class="hg-range' + extraClass + '" style="' + styles + '"' + title + ' data-id="' + rangeId + '">';
-		html += (typeof(range.content) != 'undefined') ? range.content : '';
+		html += (typeof(range.content) !== 'undefined') ? range.content : '';
 		html += '</div>';
 		return html;
 	};
 
 	HugeGrid.prototype.getRowRangesHTML = function(rowIdx) {
-		rowData = this.getRowByIndex(rowIdx);
-		if( !rowData || typeof(rowData.ranges) != 'object' )
+		var rowData = this.getRowByIndex(rowIdx);
+		if( !rowData || typeof(rowData.ranges) !== 'object' )
 			return '';
 		var html = '';
 		for( var id in rowData.ranges ) {
@@ -2098,31 +2243,31 @@
 
 	HugeGrid.prototype.getFooterCellHtml = function(cellInfo, rightClass) {
 		var html = '';
-		if( cellInfo.children == null ) {
+		if( cellInfo.children === null ) {
 			var footer = this.options.footer;
 			var cls = (footer.hasOwnProperty('classes') && footer.classes.hasOwnProperty(cellInfo.id)) ? (' ' + footer.classes[cellInfo.id]) : '';
 			var ccls = cls + ' ' + this.getColumnClasses(cellInfo.id);
 			var content = (footer.hasOwnProperty('content') && footer.content.hasOwnProperty(cellInfo.id)) ? footer.content[cellInfo.id] : '';
 			var title = (footer.hasOwnProperty('titles') && footer.titles.hasOwnProperty(cellInfo.id)) ? footer.titles[cellInfo.id] : '';
 
-			html += '<div id="hgfc_' + this.id + '_' + cellInfo.id + '" class="hg-cell hg-tf hg-' + this.id + '-ds-' + cellInfo.id + ' hg-' + this.id + '-col-' + cellInfo.id + ccls + ' ' + rightClass + '" style="height:' + this.options.footerHeight + 'px;line-height:' + (this.options.footerHeight - 4) + 'px;">' + content + '</div>';
+			html += '<div id="hgfc_' + this.id + '_' + cellInfo.id + '" title="' + title + '" class="hg-cell hg-tf hg-' + this.id + '-ds-' + cellInfo.id + ' hg-' + this.id + '-col-' + cellInfo.id + ccls + ' ' + rightClass + '" style="height:' + this.options.footerHeight + 'px;line-height:' + (this.options.footerHeight - 4) + 'px;">' + content + '</div>';
 		}
 		else {
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				html += this.getFooterCellHtml(cellInfo.children[j], (i == 0) ? rightClass : '');
+				html += this.getFooterCellHtml(cellInfo.children[j], (i === 0) ? rightClass : '');
 		}
 		return html;
 	};
-	HugeGrid.prototype.getCellCSS = function(cellInfo, addStyles) {
+	HugeGrid.prototype.getCellCSS = function(cellInfo) {
 		var css = '';
 		var hw = this.getHeadCellWidth(cellInfo);
-		if( cellInfo.children == null ) {
+		if( cellInfo.children === null ) {
 			css += '.hg-' + this.id + '-ds-' + cellInfo.id + '{position:relative;width:' + (hw + 1) + 'px;}';
 		}
 		else {
 			css += '.hg-' + this.id + '-ds-' + cellInfo.id + '{position:relative;width:' + (hw + 1) + 'px;}';
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
-				css += this.getCellCSS(cellInfo.children[j], '');
+				css += this.getCellCSS(cellInfo.children[j]);
 		}
 		css += '.hg-' + this.id + '-col-' + cellInfo.id + '{' + this.getColumnCSSRules((cellInfo.hidden || hw <= 0), cellInfo.marked) + '}';
 		return css;
@@ -2159,20 +2304,20 @@
 		var last = this.lastVisibleHBlockIdx;
 		var $parent = this.$grid;
 		
-		if( typeof(blockData) == 'object' ) {
+		if( typeof(blockData) === 'object' ) {
 			first = blockData.hBlockVis[0];
 			last = blockData.hBlockVis[1];
 			$parent = $(parentSelector);
 		}
 
-		if( first == -1 ) {
+		if( first === -1 ) {
 			first = 0;
 			last = this.hBlocks.length - 1;
-			if( typeof(blockData) != 'object' )
+			if( typeof(blockData) !== 'object' )
 				this.lastVisibleHBlockIdx = last;
 		}
 
-		if( first != n1 || last != n2 ) {
+		if( first !== n1 || last !== n2 ) {
 			var thisObj = this;
 			var showHBlock = function(idx, sw) {
 				if( sw )
@@ -2195,7 +2340,7 @@
 				for( i = Math.max(n2 + 1, first); i <= last; i++ )
 					showHBlock(i, false);
 
-			if( typeof(blockData) != 'object' ) {
+			if( typeof(blockData) !== 'object' ) {
 				this.firstVisibleHBlockIdx = n1;
 				this.lastVisibleHBlockIdx = n2;
 			}
@@ -2221,14 +2366,14 @@
 		if( isInView ) {
 			// since block is visible we should ensure it's data exists
 			// so we would be able to find invisible blocks in dom faster
-			if( typeof(blockData) != "object" )
+			if( typeof(blockData) !== "object" )
 				blockData = this.blocks[level][br1] = {visible: false, html1: null, html2: null, loaded: false, hBlockVis: [-1, -1]};
 			if( blockData.visible && level >= this.options.blockLevels - 1 )
 				return;
 			// the block is not visible yet or it is a superblock
 			if( level >= this.options.blockLevels - 1 ) {
 				var queued = false;
-				if( blockData.html1 == null || blockData.html2 == null ) {
+				if( blockData.html1 === null || blockData.html2 === null ) {
 					var t = br1 * (this.options.rowHeight + 1);
 					blockData.html1 = '<div class="hg-' + this.id + '-lblock" id="hgb1_' + this.id + '_' + br1 + '" style="top:' + t + 'px">' + this.options.loadingBlockHeadMarkup + '</div>';
 					blockData.html2 = '<div class="hg-' + this.id + '-rblock" id="hgb2_' + this.id + '_' + br1 + '" style="top:' + t + 'px">' + this.options.loadingBlockContMarkup + '</div>';
@@ -2263,14 +2408,14 @@
 		}
 		else {
 			// check if block is already invisible and/or still does not exist in memory
-			if( typeof(blockData) != "object" ) return;
+			if( typeof(blockData) !== "object" ) return;
 			if( !blockData.visible ) return;
 
 			// hide the block
 			if( level >= this.options.blockLevels - 1 ) {
 				var $blk1 = $("#hgb1_" + this.id + '_' + br1);
 				var $blk2 = $("#hgb2_" + this.id + '_' + br1);
-				if( typeof(this.options.onBlockHide) == "function" )
+				if( typeof(this.options.onBlockHide) === "function" )
 					this.options.onBlockHide.call(this, br1, $blk1, $blk2);
 				$blk1.remove();
 				$blk2.remove();
@@ -2289,13 +2434,12 @@
 
 	HugeGrid.prototype.enqueueBlockLoading = function(firstRowIdx) {
 		var requests = this.loadQueue.req;
-		if( typeof(requests[firstRowIdx]) == "object" )
+		if( typeof(requests[firstRowIdx]) === "object" )
 			return; // check if queue already contains that block ... though this function should not be called twice for same block
 		requests[firstRowIdx] = {
 			id: firstRowIdx,
 			lastId: firstRowIdx,
-			loading: false,
-			loadedBy: null
+			loading: false
 		};
 	};
 
@@ -2305,14 +2449,14 @@
 		// detect blocks that are in view
 		var b1 = Math.floor(this.firstVisibleRowIdx / this.options.blockSize) * this.options.blockSize;
 		var b2 = Math.floor(this.lastVisibleRowIdx / this.options.blockSize) * this.options.blockSize;
-		var b;
 		var requests = this.loadQueue.req;
 
 		for(var bid in requests) {
+			if( !requests.hasOwnProperty(bid) )
+				continue;
 			var req = requests[bid];
-			if( typeof(req) != "object" ) continue; // this should never happen, but check just in case ...
+			if( typeof(req) !== "object" ) continue; // this should never happen, but check just in case ...
 			if( req.loading ) continue; // already loading so skip it
-			if( req.loadedBy != null && req.loadedBy.loading ) continue; // it is loading together with another block
 
 			if( bid < b1 || bid > b2 ) {
 				// if the request is not being loaded and it's outside the viewed area we cancel it's loading
@@ -2324,14 +2468,8 @@
 			}
 
 			this.loadQueue.load++;
-			if( req.loadedBy != null ) {
-				req.loadedBy.loading = true;
-				this.startBlockLoading(req.loadedBy);
-			}
-			else {
-				req.loading = true;
-				this.startBlockLoading(req);
-			}
+			req.loading = true;
+			this.startBlockLoading(req);
 			if( this.options.maxConcurrentLoads <= this.loadQueue.load )
 				return; // too many blocks are already being loaded
 		}
@@ -2353,7 +2491,7 @@
 			};
 			this.serializeFilterData(data);
 
-			if( typeof grid.options.onBeforeRequestData == 'function' )
+			if( typeof grid.options.onBeforeRequestData === 'function' )
 				grid.options.onBeforeRequestData.call(this, data);
 
 			$.ajax({
@@ -2363,31 +2501,34 @@
 				async: true,
 
 				dataType: "json",
+				/**
+				 * @param {HugeGridAjaxResponse} resp
+				 */
 				success: function(resp) {
-					if( typeof(resp.success) != "boolean" || !resp.success ) {
-						if( typeof(grid.options.onError) == "function" )
+					if( typeof(resp.success) !== "boolean" || !resp.success ) {
+						if( typeof(grid.options.onError) === "function" )
 							grid.options.onError.call(grid, resp);
 						return;
 					}
 
 					// check if this ajax request is not needed anymore (table data started to reload while waiting for the response)
-					if( resp.dataSession != grid.dataSession ) {
+					if( resp.dataSession !== grid.dataSession.toString() ) {
 						grid.loadQueue.load--;
 						grid.processLoadingQueue();
 						return;
 					}
 
-					if( typeof grid.options.onRowDataReceived == 'function' )
+					if( typeof grid.options.onRowDataReceived === 'function' )
 						grid.options.onRowDataReceived.call(this, resp);
 
 					var refreshView = false;
-					if( grid.rowCount != resp.totalRows ) {
+					if( grid.rowCount !== resp.totalRows ) {
 						refreshView = true;
 						grid.rowCount = resp.totalRows;
 						grid.onRowCountChange();
 					}
 
-					if( typeof(grid.options.onRowCountUpdate) == "function" )
+					if( typeof(grid.options.onRowCountUpdate) === "function" )
 						grid.options.onRowCountUpdate(resp.totalRows, resp.totalUnfilteredRows);
 
 					for( var rowIdx = resp.firstRow, i = 0; rowIdx <= resp.lastRow; rowIdx++, i++ ) {
@@ -2431,13 +2572,13 @@
 		var n2 = Math.min(blockId + this.options.blockSize - 1, lastRow);
 		for( n = n1; n <= n2; n++ ) {
 			var rowData = this.data[n];
-			if( typeof(rowData) != 'object' ) {
+			if( typeof(rowData) !== 'object' ) {
 				setTimeout(function() {
 					if( this.dataLost )
 						alert('Error: Grid received less data than expected. Please reset or reapply the filter to reload the data.');
 					else {
 						this.dataLost = true;
-						if( typeof(createFilter) == 'function' )
+						if( typeof(createFilter) === 'function' )
 							createFilter(true);
 						else {
 							this.dataParam = null;
@@ -2448,18 +2589,17 @@
 				break;
 			}
 			var rowClass = 'hg-row hg-' + this.id + '-row';
-			if( typeof(rowData.rowClass) == "string" )
+			if( typeof(rowData.rowClass) === "string" )
 				rowClass += ' ' + rowData.rowClass;
 			colHtml += '<div id="hgr1_' + this.id + '_' + n + '" class="' + rowClass + '">';
 			contentHtml += '<div id="hgr2_' + this.id + '_' + n + '" class="' + rowClass + '">';
 			var hb = 0, hbIdx;
 			for( i = 0, j = this.options.header.length - 1; j >= 0; i++, j-- ) {
-				var hdr = this.options.header[i];
 				hb = i - this.options.fixedColumns;
 				if( hb < 0 )
 					colHtml += this.getDataCellHtml(this.options.header[i], n, '', '');
 				else {
-					if( hb % this.options.hBlockSize == 0 && j > 0 ) {
+					if( hb % this.options.hBlockSize === 0 && j > 0 ) {
 						hbIdx = hb / this.options.hBlockSize;
 						if( hb > 0 )
 							contentHtml += '</div>';
@@ -2505,7 +2645,7 @@
 		var req = requests[blockId];
 		for( var br1 = blockId; br1 <= req.lastId; br1 += this.options.blockSize ) {
 			this.generateDataBlockHtml(br1, true);
-			if( br1 != blockId ) {
+			if( br1 !== blockId ) {
 				// block is loaded so it is not needed in the queue anymore
 				requests[br1] = null;
 				delete requests[br1];
@@ -2530,12 +2670,12 @@
 
 	/**
 	 * @param {object} header
-	 * @param {string} parentId
+	 * @param {string|null} parentId
 	 * @param {boolean} parentHidden
-	 * @param {object} columnCalc
+	 * @param {object} [columnCalc]
 	 */
 	HugeGrid.prototype.buildColumnIndex = function(header, parentId, parentHidden, columnCalc) {
-		if( typeof(columnCalc) != 'object' )
+		if( !columnCalc || typeof columnCalc !== 'object' )
 			columnCalc = {index: 0, positionIndex: 0, position: [0, 0], width: 0};
 		for( var i = 0; i < header.length; i++ ) {
 			if( !parentId )
@@ -2543,12 +2683,12 @@
 
 			var hdr = header[i];
 
-			if( typeof(hdr.id) == 'undefined' )
+			if( typeof(hdr.id) === 'undefined' )
 				continue;
 
 			hdr.parentId = parentId;
 
-			if( !hdr.hasOwnProperty('children') || typeof(hdr.children) != 'object' || (hdr.children && hdr.children.length == 0) ) hdr.children = null;
+			if( !hdr.hasOwnProperty('children') || typeof(hdr.children) !== 'object' || (hdr.children && hdr.children.length === 0) ) hdr.children = null;
 			if( !hdr.hasOwnProperty('hidden') ) hdr.hidden = false;
 			if( !hdr.hasOwnProperty('marked') ) hdr.marked = false;
 			if( !hdr.hasOwnProperty('nosort') ) hdr.nosort = false;
@@ -2563,12 +2703,12 @@
 			this.columnIndex[hdr.id] = hdr;
 
 			hdr.index = columnCalc.index;
-			hdr.fixed = (columnCalc.positionIndex == 0);
+			hdr.fixed = (columnCalc.positionIndex === 0);
 			hdr.position = columnCalc.position[columnCalc.positionIndex];
 
 			var hidden = parentHidden || hdr.hidden;
 
-			if( hdr.children != null ) {
+			if( hdr.children !== null ) {
 				var w = columnCalc.width;
 				columnCalc.width = 0;
 				this.buildColumnIndex(hdr.children, hdr.id, hidden, columnCalc);
@@ -2576,7 +2716,7 @@
 				columnCalc.width += w;
 			}
 			else {
-				if( columnCalc.positionIndex == 0 )
+				if( columnCalc.positionIndex === 0 )
 					this.lastFixedColumn = hdr;
 				else if( this.firstUnfixedColumn === null )
 					this.firstUnfixedColumn = hdr;
@@ -2594,7 +2734,7 @@
 	};
 
 	HugeGrid.prototype.recalculateColumnPositions = function(header, parentId, parentHidden, columnCalc) {
-		if( typeof(columnCalc) != 'object' )
+		if( typeof(columnCalc) !== 'object' )
 			columnCalc = {index: 0, positionIndex: 0, position: [0, 0], width: 0};
 		for( var i = 0; i < header.length; i++ ) {
 			if( !parentId )
@@ -2602,14 +2742,14 @@
 
 			var hdr = header[i];
 
-			if( typeof(hdr.id) == 'undefined' )
+			if( typeof(hdr.id) === 'undefined' )
 				continue;
 
 			var hidden = parentHidden || hdr.hidden;
 
 			hdr.position = columnCalc.position[columnCalc.positionIndex];
 
-			if( hdr.children != null ) {
+			if( hdr.children !== null ) {
 				var w = columnCalc.width;
 				columnCalc.width = 0;
 				this.recalculateColumnPositions(hdr.children, hdr.id, hidden, columnCalc);
@@ -2624,7 +2764,7 @@
 	};
 
 	HugeGrid.prototype.getHeader = function(colId) {
-		return (typeof(this.columnIndex[colId]) == 'object') ? this.columnIndex[colId] : null;
+		return (typeof(this.columnIndex[colId]) === 'object') ? this.columnIndex[colId] : null;
 	};
 
 	HugeGrid.prototype.getColumnCSSRules = function(hidden, marked) {
@@ -2634,8 +2774,8 @@
 	HugeGrid.prototype.showColumn = function(colId, sw) {
 		var hw;
 		var hdr = this.getHeader(colId);
-		if( hdr == null ) return;
-		if( hdr.hidden != sw ) return;
+		if( hdr === null ) return;
+		if( hdr.hidden !== sw ) return;
 		hdr.hidden = !sw;
 
 		if( sw ) {
@@ -2653,7 +2793,7 @@
 		var phdr = hdr;
 		while( phdr.parentId ) {
 			phdr = this.getHeader(phdr.parentId);
-			if( phdr == null ) break;
+			if( phdr === null ) break;
 			if( phdr.hidden ) break; // parent is hidden so the child should not be visible too
 			hw = this.getHeadCellWidth(phdr);
 			if( hw <= 0 ) {
@@ -2682,23 +2822,23 @@
 
 	HugeGrid.prototype.markColumn = function(colId, mark) {
 		var hdr = this.getHeader(colId);
-		if( hdr == null ) return;
-		if( hdr.marked == mark ) return;
+		if( hdr === null ) return;
+		if( hdr.marked === mark ) return;
 		hdr.marked = mark;
 		this.replaceCSSRules('hg-' + this.id + '-col-' + colId, this.getColumnCSSRules(hdr.hidden, hdr.marked));
 	};
 
 	HugeGrid.prototype.isColumnMarked = function(colId) {
 		var hdr = this.getHeader(colId);
-		if( hdr == null ) return false;
+		if( hdr === null ) return false;
 		return hdr.marked;
 	};
 
 	HugeGrid.prototype.getColumnClasses = function(colId) {
 		var col = this.getHeader(colId);
-		if( col == null ) return '';
-		if( typeof(col._cssClass) != 'string' ) {
-			var cls = (col.parentId ? (this.getColumnClasses(col.parentId) + ' ') : '') + ((typeof(col['class']) == 'string') ? col['class'] : '');
+		if( col === null ) return '';
+		if( typeof(col._cssClass) !== 'string' ) {
+			var cls = (col.parentId ? (this.getColumnClasses(col.parentId) + ' ') : '') + ((typeof(col['class']) === 'string') ? col['class'] : '');
 			col._cssClass = cls.trim();
 		}
 		return col._cssClass;
@@ -2724,7 +2864,7 @@
 		};
 	};
 
-	HugeGrid.prototype.update = function(isSecondary) {
+	HugeGrid.prototype.update = function() {
 		var $this = this.$grid;
 
 		var thisHeight = $this.height();
@@ -2768,7 +2908,7 @@
 			this.vScrollSize = this.$vScrollTumb.parent().innerHeight() - this.$vScrollTumb.outerHeight();
 		this.hScrollSize = this.$hScrollTumb.parent().innerWidth() - this.$hScrollTumb.outerWidth();
 
-		if( this.hScrollMax == 0 )
+		if( this.hScrollMax === 0 )
 			this.$hScroll.css({display: 'none'});
 		else
 			this.$hScroll.css({display: ''});
@@ -2780,8 +2920,8 @@
 	};
 
 	HugeGrid.prototype.refreshScrollbars = function(rowCountChanged) {
-		var p, stpos, scrolled = false;
-		var rcc = (typeof(rowCountChanged) == "boolean" && rowCountChanged);
+		var p, scpos, stpos, scrolled = false;
+		var rcc = (typeof(rowCountChanged) === "boolean" && rowCountChanged);
 		p = this.hScrollPos / this.hScrollMax;
 		if( p > 1 ) {
 			p = 1;
@@ -2811,16 +2951,16 @@
 		if( this.$vScroll )
 			this.$vScrollTumb.css({top: stpos});
 
-		if( scrolled && typeof(this.options.onScroll) == "function" )
+		if( scrolled && typeof(this.options.onScroll) === "function" )
 			this.options.onScroll.call(this, this.hScrollPos, this.vScrollPos);
 	};
 
 	HugeGrid.prototype.getRowByIndex = function(rowIdx) {
-		return (typeof(this.data[rowIdx]) == "object") ? this.data[rowIdx] : null;
+		return (typeof(this.data[rowIdx]) === "object") ? this.data[rowIdx] : null;
 	};
 
 	HugeGrid.prototype.getRow = function(rowId) {
-		return (typeof(this.dataIndex[rowId]) == "object") ? this.dataIndex[rowId] : null;
+		return (typeof(this.dataIndex[rowId]) === "object") ? this.dataIndex[rowId] : null;
 	};
 
 	HugeGrid.prototype.addRow = function(row) {
@@ -2828,7 +2968,7 @@
 	};
 
 	HugeGrid.prototype.addRows = function(rows) {
-		if( this.useAjaxLoading || rows.length == 0 )
+		if( this.useAjaxLoading || rows.length === 0 )
 			return;
 
 		var height = this.$grid.height();
@@ -2851,12 +2991,12 @@
 	};
 
 	HugeGrid.prototype.removeRow = function(id) {
-		if( this.useAjaxLoading || typeof(this.dataIndex[id]) != 'object' )
+		if( this.useAjaxLoading || typeof(this.dataIndex[id]) !== 'object' )
 			return;
 
 		var data = this.options.data;
 		for( var i = data.length - 1; i >= 0; i-- ) {
-			if( data[i].id == id ) {
+			if( data[i].id === id ) {
 				data.splice(i, 1);
 				break;
 			}
@@ -2884,12 +3024,12 @@
 
 	HugeGrid.prototype.refreshFooterHTML = function() {
 		if( this.$footerCorner ) {
-			var j, cornerFootHtml = '', rowFootHtml = '';
+			var i, j, cornerFootHtml = '', rowFootHtml = '';
 			for( i = 0, j = this.options.header.length - 1; j >= 0; i++, j-- ) {
 				if( i < this.options.fixedColumns )
 					cornerFootHtml += this.getFooterCellHtml(this.options.header[i], '');
 				else
-					rowFootHtml += this.getFooterCellHtml(this.options.header[i], (j == 0) ? 'nrb' : '');
+					rowFootHtml += this.getFooterCellHtml(this.options.header[i], (j === 0) ? 'nrb' : '');
 			}
 			this.$footerCorner.html(cornerFootHtml);
 			this.$footerRowContent.html(rowFootHtml);
@@ -2906,7 +3046,7 @@
 	};
 
 	HugeGrid.prototype.updateRows = function(rows, updateDom) {
-		if( rows.length == 0 )
+		if( rows.length === 0 )
 			return;
 
 		var updated = false;
@@ -2917,7 +3057,7 @@
 			idIndex[data[i].id] = i;
 		for( i = rows.length - 1; i >= 0; i-- ) {
 			var row = rows[i];
-			if( typeof(this.dataIndex[row.id]) != 'object' )
+			if( typeof(this.dataIndex[row.id]) !== 'object' )
 				continue;
 			if( this.useAjaxLoading ) {
 				row.blockId = this.dataIndex[row.id].blockId;
@@ -2943,7 +3083,7 @@
 	HugeGrid.prototype.addOrUpdateRow = function(row) {
 		if( this.useAjaxLoading )
 			return;
-		if( typeof(this.dataIndex[row.id]) == 'object' )
+		if( typeof(this.dataIndex[row.id]) === 'object' )
 			this.updateRow(row);
 		else
 			this.addRow(row);
@@ -2962,7 +3102,7 @@
 
 		if( !$target.hasClass("hg-td") && !$target.hasClass("hg-th") && !$target.hasClass("hg-tf") && !$target.hasClass("hg-range") && !$target.hasClass("hg-filter") )
 			$target = $target.closest(".hg-td,.hg-th,.hg-tf,.hg-range,.hg-filter,.hg-drop-down");
-		if( $target.length == 0 )
+		if( $target.length === 0 )
 			return null;
 
 		var target = null;
@@ -2980,12 +3120,12 @@
 		else if( $target.is('.hg-range') )
 			target = {type: 'range', rowIdx: null, rowId: null, rangeId: null, row: null, range: null};
 
-		if( target == null )
+		if( target === null )
 			return null;
 
 		target.object = $target.get(0);
 
-		if( target.type == 'data' || target.type == 'range' ) {
+		if( target.type === 'data' || target.type === 'range' ) {
 			var $row = $target.closest('.hg-row');
 			if( $row.length > 0 ) {
 				var ids = $row.attr("id").split('_');
@@ -2998,7 +3138,7 @@
 		if( isDropDown ) {
 			target.colId = $target.data('col');
 		}
-		else if( target.type != 'range' ) {
+		else if( target.type !== 'range' ) {
 			var cls = $target.attr("class").match(/hg-[^\s]+-ds-([^\s]+)/);
 			target.colId = cls[1];
 		}
@@ -3021,77 +3161,19 @@
 		var $cell = $(cellDomElement);
 		if( !$cell.hasClass("hg-td") && !$cell.hasClass("hg-th") && !$cell.hasClass("hg-tf") )
 			$cell = $cell.closest(".hg-td,.hg-th,.hg-tf");
-		if( $cell.length == 0 ) return null;
+		if( $cell.length === 0 ) return null;
 		var isHead = $cell.hasClass("hg-th") || $cell.hasClass("hg-tf");
 		var id;
 		if( isHead )
 			id = null;
 		else {
 			var $row = $cell.closest('.hg-row');
-			if( $row.length == 0 ) return null;
+			if( $row.length === 0 ) return null;
 			var ids = $row.attr("id").split('_');
 			id = parseInt(ids[ids.length - 1]);
 		}
 		var cls = $cell.attr("class").match(/hg-[^\s]+-ds-([^\s]+)/);
 		return {rowIdx: id, colId: cls[1]};
-	};
-
-	// this - scroll bar dom element
-	HugeGrid.onVScroll = function(e, ui) {
-		var $this = $(this);
-		var scrollOptions = $this.data("hugeGrid");
-		var pos = $this.position().top;
-		if( pos == scrollOptions[1] )
-			return; // event occured on the same position twice so don't do anything ...
-		scrollOptions[1] = pos;
-		var grid = scrollOptions[0];
-
-		var oldpos = grid.vScrollPos;
-		grid.vScrollPos = Math.floor(pos * grid.vScrollMax / grid.vScrollSize);
-		var scpos = '-' + grid.vScrollPos + "px";
-		grid.$content.css({top: scpos});
-		grid.$headColContent.css({top: scpos});
-
-		ui.offset.left += 18 - ui.originalPosition.left;
-		ui.originalPosition.left = 18;
-		ui.position.left = 18;
-		$this.css({left: '18px'});
-
-		grid.updateVisibleRowIndexes();
-		grid.refreshView();
-		grid.processLoadingQueue();
-
-		if( oldpos != grid.vScrollPos && typeof(grid.options.onScroll) == "function" )
-			grid.options.onScroll.call(grid, grid.hScrollPos, grid.vScrollPos);
-	};
-
-	// this - scroll bar dom element
-	HugeGrid.onHScroll = function(e, ui) {
-		var $this = $(this);
-		var scrollOptions = $this.data("hugeGrid");
-		var pos = $this.position().left;
-		if( pos == scrollOptions[1] )
-			return; // event occured on the same position twice so don't do anything ...
-		scrollOptions[1] = pos;
-		var grid = scrollOptions[0];
-
-		var oldpos = grid.hScrollPos;
-		grid.hScrollPos = Math.floor(pos * grid.hScrollMax / grid.hScrollSize);
-		var scpos = '-' + grid.hScrollPos + "px";
-		grid.$content.css({left: scpos});
-		grid.$headRowContent.css({left: scpos});
-		if( grid.$footerCorner )
-			grid.$footerRowContent.css({left: scpos});
-
-		ui.offset.top += 18 - ui.originalPosition.top;
-		ui.originalPosition.top = 18;
-		ui.position.top = 18;
-		$this.css({top: '18px'});
-
-		grid.refreshView();
-
-		if( oldpos != grid.hScrollPos && typeof(grid.options.onScroll) == "function" )
-			grid.options.onScroll.call(grid, grid.hScrollPos, grid.vScrollPos);
 	};
 
 	HugeGrid.getSortValue = function(row, colId, def) {
@@ -3111,7 +3193,7 @@
 	HugeGrid.toolTipDeactivation = null;
 
 	HugeGrid.showToolTip = function(e, key, html) {
-		if( HugeGrid.toolTipActive == key || (HugeGrid.toolTipActivation && HugeGrid.toolTipActivation.key == key) ) {
+		if( HugeGrid.toolTipActive === key || (HugeGrid.toolTipActivation && HugeGrid.toolTipActivation.key === key) ) {
 			// Abort deactivation and do nothing if there is an activation of this key in progress or the
 			// tooltip is already active.
 			if( HugeGrid.toolTipDeactivation ) {
@@ -3172,7 +3254,7 @@
 
 	HugeGrid.hideToolTip = function(instant) {
 		if( instant ) {
-			if( HugeGrid.toolTipActivation != null ) {
+			if( HugeGrid.toolTipActivation !== null ) {
 				clearTimeout(HugeGrid.toolTipActivation.timer);
 				HugeGrid.toolTipActivation = null;
 			}
@@ -3196,7 +3278,7 @@
 	HugeGrid.htmlspecialchars = function(text) {
 		if( text === null )
 			return '';
-		if( typeof text != 'string' )
+		if( typeof text !== 'string' )
 			text = text.toString();
 		return text.replace(/[&<>"']/g, function(chr) {
 			return HugeGrid.htmlspecialchars.characterMap[chr];
@@ -3205,6 +3287,9 @@
 
 	HugeGrid.htmlspecialchars.characterMap = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'};
 
+	/**
+	 * @type HugeGridOptions
+	 */
 	HugeGrid.defaults = {
 		id: null,
 
@@ -3287,7 +3372,7 @@
 			'string': function(colId, isDesc, a, b) {
 				var v1 = HugeGrid.getSortValue(a, colId, '');
 				var v2 = HugeGrid.getSortValue(b, colId, '');
-				if(v1 == v2)
+				if(v1 === v2)
 					return 0;
 				return ((v1 < v2) ? -1 : 1) * (isDesc ? -1 : 1);
 			},
@@ -3295,17 +3380,17 @@
 				var v1 = HugeGrid.getSortValue(a, colId, 0);
 				var v2 = HugeGrid.getSortValue(b, colId, 0);
 
-				if( typeof(v1) != 'number') {
-					v1 = parseFloat(v1.replace(/[^0-9\.\-]+/g, ''));
+				if( typeof(v1) !== 'number') {
+					v1 = parseFloat(v1.replace(/[^0-9.\-]+/g, ''));
 					if( isNaN(v1) ) v1 = 0;
 				}
 
-				if( typeof(v2) != 'number') {
-					v2 = parseFloat(v2.replace(/[^0-9\.\-]+/g, ''));
+				if( typeof(v2) !== 'number') {
+					v2 = parseFloat(v2.replace(/[^0-9.\-]+/g, ''));
 					if( isNaN(v2) ) v2 = 0;
 				}
 
-				if(v1 == v2)
+				if(v1 === v2)
 					return 0;
 				return ((v1 < v2) ? -1 : 1) * (isDesc ? -1 : 1);
 			}
@@ -3323,7 +3408,7 @@
 		.on('mousedown', function(e) {
 			HugeGrid.hideToolTip(true);
 			if( HugeGrid.$activeDropDown ) {
-				if( HugeGrid.$activeDropDown[0] !== e.target && !$.contains(HugeGrid.$activeDropDown[0], e.target) && $(e.target).closest('.ui-widget').length == 0 ) {
+				if( HugeGrid.$activeDropDown[0] !== e.target && !$.contains(HugeGrid.$activeDropDown[0], e.target) && $(e.target).closest('.ui-widget').length === 0 ) {
 					HugeGrid.$activeDropDown.removeClass('active');
 					HugeGrid.$activeDropDown = null;
 				}
@@ -3338,11 +3423,13 @@
 
 	$(window).on('mousewheel wheel', function(e) {
 		if( HugeGrid.mouseOverGrid ) {
-			var deltaX = Math.min(Math.max(e.originalEvent.wheelDeltaX || -e.originalEvent.deltaX, -1), 1);
-			var deltaY = Math.min(Math.max(e.originalEvent.wheelDeltaY || -e.originalEvent.deltaY, -1), 1);
+			/** @var {number} e.originalEvent.wheelDeltaX */
+			/** @var {number} e.originalEvent.wheelDeltaY */
+			var deltaX = Math.min(Math.max(e.originalEvent.hasOwnProperty("wheelDeltaX") ? e.originalEvent.wheelDeltaX : -e.originalEvent.deltaX, -1), 1);
+			var deltaY = Math.min(Math.max(e.originalEvent.hasOwnProperty("wheelDeltaY") ? e.originalEvent.wheelDeltaY : -e.originalEvent.deltaY, -1), 1);
 			var delta = deltaX ? deltaX : deltaY;
 			
-			if( typeof HugeGrid.mouseOverGrid.options.onBeforeWheelScroll == 'function' )
+			if( typeof HugeGrid.mouseOverGrid.options.onBeforeWheelScroll === 'function' )
 				if( !HugeGrid.mouseOverGrid.options.onBeforeWheelScroll.call(HugeGrid.mouseOverGrid, e, delta, deltaX, deltaY) )
 					return;
 			if( HugeGrid.mouseOverGrid.scrollBy(-deltaX * HugeGrid.mouseOverGrid.options.hScrollSpeed, -deltaY * HugeGrid.mouseOverGrid.options.vScrollSpeed) ) {
@@ -3352,17 +3439,21 @@
 		}
 	});
 
+	/**
+	 * @param {HugeGridOptions|string} options
+	 * @return {JQuery | HTMLElement | *}
+	 */
 	$.fn.hugeGrid = function(options) {
 		var hgArgs = arguments;
 		var retVal;
 
-		$grids = $(this);
+		var $grids = $(this);
 		retVal = $grids;
 
 		$grids.each(function() {
 			var $this = $(this);
 
-			if( typeof(options) == "string" ) {
+			if( typeof(options) === "string" ) {
 				var instance = $this.data("hugeGrid");
 				if( !instance )
 					return;
@@ -3389,11 +3480,11 @@
 					case "removeRow": instance.removeRow(hgArgs[1]); break;
 					case "sort": instance.sort(hgArgs[1], hgArgs[2]); break;
 					case "data":
-						if( typeof(hgArgs[1]) == 'object' ) {
-							var dataParam = (typeof(hgArgs[2]) == 'undefined') ? null : hgArgs[2];
+						if( typeof(hgArgs[1]) === 'object' ) {
+							var dataParam = (typeof(hgArgs[2]) === 'undefined') ? null : hgArgs[2];
 							instance.setData(hgArgs[1], dataParam);
 						}
-						else if( typeof(hgArgs[1]) == 'function' )
+						else if( typeof(hgArgs[1]) === 'function' )
 							hgArgs[1].call(instance, instance.data, instance.dataParam);
 						else
 							retVal = instance.data;
