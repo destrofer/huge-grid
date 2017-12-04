@@ -14,11 +14,11 @@
 }
 
 .hg-marked-row .hg-highlight-red, .hg-highlight-red.hg-marked-row {
-  background-color: #ffd8a8 !important;
+  background-color: #ffd9a9 !important;
 }
 
 .hg-over.hg-marked-row .hg-highlight-red, .hg-highlight-red.hg-over.hg-marked-row {
-  background-color: #ffcf94 !important;
+  background-color: #ffd095 !important;
 }
 
 .hg-range.hg-highlight-red {
@@ -30,11 +30,11 @@
 }
 
 .hg-marked-row .hg-range.hg-highlight-red {
-  background-color: rgba(255, 216, 168, 0.75);
+  background-color: rgba(255, 217, 169, 0.75);
 }
 
 .hg-over.hg-marked-row .hg-range.hg-highlight-red {
-  background-color: rgba(255, 207, 148, 0.75);
+  background-color: rgba(255, 208, 149, 0.75);
 }
 
 .hg-highlight-green, .qtable .hg-highlight-green > td {
@@ -46,11 +46,11 @@
 }
 
 .hg-marked-row .hg-highlight-green, .hg-highlight-green.hg-marked-row {
-  background-color: #eee5a5 !important;
+  background-color: #eee6a5 !important;
 }
 
 .hg-over.hg-marked-row .hg-highlight-green, .hg-highlight-green.hg-over.hg-marked-row {
-  background-color: #ebe094 !important;
+  background-color: #ebe194 !important;
 }
 
 .hg-range.hg-highlight-green {
@@ -62,11 +62,11 @@
 }
 
 .hg-marked-row .hg-range.hg-highlight-green {
-  background-color: rgba(238, 229, 165, 0.75);
+  background-color: rgba(238, 230, 165, 0.75);
 }
 
 .hg-over.hg-marked-row .hg-range.hg-highlight-green {
-  background-color: rgba(235, 224, 148, 0.75);
+  background-color: rgba(235, 225, 148, 0.75);
 }
 
 .hg-highlight-yellow, .qtable .hg-highlight-yellow > td {
@@ -78,11 +78,11 @@
 }
 
 .hg-marked-row .hg-highlight-yellow, .hg-highlight-yellow.hg-marked-row {
-  background-color: #ffe5af !important;
+  background-color: #ffe5b0 !important;
 }
 
 .hg-over.hg-marked-row .hg-highlight-yellow, .hg-highlight-yellow.hg-over.hg-marked-row {
-  background-color: #ffde9b !important;
+  background-color: #ffde9c !important;
 }
 
 .hg-range.hg-highlight-yellow {
@@ -94,11 +94,11 @@
 }
 
 .hg-marked-row .hg-range.hg-highlight-yellow {
-  background-color: rgba(255, 229, 175, 0.75);
+  background-color: rgba(255, 229, 176, 0.75);
 }
 
 .hg-over.hg-marked-row .hg-range.hg-highlight-yellow {
-  background-color: rgba(255, 222, 155, 0.75);
+  background-color: rgba(255, 222, 156, 0.75);
 }
 
 .hg-highlight-blue, .qtable .hg-highlight-blue > td {
@@ -110,11 +110,11 @@
 }
 
 .hg-marked-row .hg-highlight-blue, .hg-highlight-blue.hg-marked-row {
-  background-color: #f0e0b5 !important;
+  background-color: #f1e0b6 !important;
 }
 
 .hg-over.hg-marked-row .hg-highlight-blue, .hg-highlight-blue.hg-over.hg-marked-row {
-  background-color: #edd9a4 !important;
+  background-color: #eed9a5 !important;
 }
 
 .hg-range.hg-highlight-blue {
@@ -126,11 +126,11 @@
 }
 
 .hg-marked-row .hg-range.hg-highlight-blue {
-  background-color: rgba(240, 224, 181, 0.75);
+  background-color: rgba(241, 224, 182, 0.75);
 }
 
 .hg-over.hg-marked-row .hg-range.hg-highlight-blue {
-  background-color: rgba(237, 217, 164, 0.75);
+  background-color: rgba(238, 217, 165, 0.75);
 }
 
 .hg-sort th {
