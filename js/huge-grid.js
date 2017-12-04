@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.4.0
+* Version: 1.5.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -3219,7 +3219,7 @@
 		sortDesc: false,
 		noSort: false,			// when TRUE the sort row is not rendered.
 		autoSort: true,			// when TRUE grid automatically reorders rows when they change.
-		sortRowHeight: 37,
+		sortRowHeight: 20,
 		sortMarkup: '<div class="hg-sort-inner"><div class="hg-sort-desc"></div><div class="hg-sort-asc"></div></div>',
 		noSortMarkup: '',
 
