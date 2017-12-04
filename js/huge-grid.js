@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.5.1
+* Version: 1.5.2
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -858,7 +858,7 @@
 	HugeGrid.prototype.scrollBy = function(hDelta, vDelta) {
 		var hPos = this.hScrollPos + hDelta;
 		var vPos = this.vScrollPos + vDelta;
-		this.scrollTo(hPos, vPos);
+		return this.scrollTo(hPos, vPos);
 	};
 
 	HugeGrid.prototype.scrollTo = function(hPos, vPos) {
@@ -887,7 +887,6 @@
 			this.$headColContent.css({top: scpos});
 			if( this.$vScroll )
 				this.$vScrollTumb.css({top: stpos});
-
 			this.updateVisibleRowIndexes();
 			scrolled = true;
 		}
@@ -899,6 +898,8 @@
 
 		if( scrolled && typeof(this.options.onScroll) == "function" )
 			this.options.onScroll.call(this, this.hScrollPos, this.vScrollPos);
+		
+		return scrolled;
 	};
 
 	HugeGrid.prototype.sort = function(sortKey, sortDesc) {
@@ -3251,6 +3252,8 @@
 		vScrollPos: 0,
 		hScrollHeight: 32,
 		vScrollWidth: 32,
+		hScrollSpeed: 360,
+		vScrollSpeed: 120,
 		hScrollMarkup: '<div class="hg-hscroll-tumb" />',
 		vScrollMarkup: '<div class="hg-vscroll-tumb" />',
 
@@ -3333,12 +3336,19 @@
 			inst.onMouseUp(e);
 		});
 
-	$(window).on('mousewheel', function(e, delta, deltaX, deltaY) {
+	$(window).on('mousewheel wheel', function(e) {
 		if( HugeGrid.mouseOverGrid ) {
+			var deltaX = Math.min(Math.max(e.originalEvent.wheelDeltaX || -e.originalEvent.deltaX, -1), 1);
+			var deltaY = Math.min(Math.max(e.originalEvent.wheelDeltaY || -e.originalEvent.deltaY, -1), 1);
+			var delta = deltaX ? deltaX : deltaY;
+			
 			if( typeof HugeGrid.mouseOverGrid.options.onBeforeWheelScroll == 'function' )
 				if( !HugeGrid.mouseOverGrid.options.onBeforeWheelScroll.call(HugeGrid.mouseOverGrid, e, delta, deltaX, deltaY) )
 					return;
-			HugeGrid.mouseOverGrid.scrollBy(deltaX * 120, -deltaY * 60);
+			if( HugeGrid.mouseOverGrid.scrollBy(-deltaX * HugeGrid.mouseOverGrid.options.hScrollSpeed, -deltaY * HugeGrid.mouseOverGrid.options.vScrollSpeed) ) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
 		}
 	});
 
