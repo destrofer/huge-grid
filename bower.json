@@ -14,11 +14,11 @@
   "homepage": "https://github.com/destrofer/huge-grid",
   "private": true,
   "ignore": [
-    "compile-scss.bat"
+    "compile-scss.bat",
+    "tests"
   ],
   "dependencies": {
     "jquery": "^1.7.2",
-    "jquery.ui": "^1.11.0",
     "custom-select": "destrofer/custom-select#^1.0.0"
   }
 }
