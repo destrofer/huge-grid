@@ -13,6 +13,7 @@
 		$this.data('hugeGrid', this);
 		$this.addClass('huge-grid'); // one of first things to be done. otherwise some DOM event listeners might fail
 		this.$grid = $this;
+		var grid = this;
 
 		var i, j, col;
 
@@ -331,13 +332,9 @@
 		if( this.$vScroll )
 			$this.append(this.$vScroll);
 		$this.append(this.$dropDowns);
-
+		
 		if( this.$vScroll ) {
-			this.$vScrollTumb.draggable({axis: 'y', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onVScroll, start: function(e, ui) {
-				$(e.target).css({left: '18px'});
-			}, stop: function(e, ui) {
-				$(e.target).css({left: '18px'});
-			} });
+			this.$vScrollTumb.on("mousedown", this.onVScrollMouseDown.bind(this));
 			this.$vScrollTumb.data("hugeGrid", [this, 0]);
 			this.vScrollMax = Math.max(this.contentHeight - this.containerHeight - 1, 0);
 			this.vScrollSize = this.$vScrollTumb.parent().innerHeight() - this.$vScrollTumb.outerHeight();
@@ -346,11 +343,7 @@
 			this.vScrollMax = this.vScrollSize = 0;
 		}
 
-		this.$hScrollTumb.draggable({axis: 'x', containment: 'parent', scroll: false, scrollSensitivity: 0, drag: HugeGrid.onHScroll, start: function(e, ui) {
-			$(e.target).css({top: '18px'});
-		}, stop: function(e, ui) {
-			$(e.target).css({top: '18px'});
-		} });
+		this.$hScrollTumb.on("mousedown", this.onHScrollMouseDown.bind(this));
 		this.$hScrollTumb.data("hugeGrid", [this, 0]);
 		this.hScrollMax = Math.max(this.contentWidth - this.containerWidth - 1, 0);
 		this.hScrollSize = this.$hScrollTumb.parent().innerWidth() - this.$hScrollTumb.outerWidth();
@@ -741,6 +734,109 @@
 	 */
 	HugeGrid.prototype.autoScroll = null;
 
+	/**
+	 * @type {object}
+	 */
+	HugeGrid.prototype.scrollDragInfo = null;
+
+	HugeGrid.prototype.onHScrollMouseDown = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		var pos = this.$hScrollTumb.position().left;
+		this.scrollDragInfo = {
+			initialMousePos: e.pageX,
+			initialPos: pos,
+			currentPos: pos,
+			prevPos: pos
+		};
+		$(window).on("mousemove", this.onHScrollMouseMove.bind(this)).on("mouseup", this.onHScrollMouseUp.bind(this));
+	};
+	
+	HugeGrid.prototype.onHScrollMouseMove = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		this.scrollDragInfo.currentPos = this.scrollDragInfo.initialPos + e.pageX - this.scrollDragInfo.initialMousePos;
+		if( this.scrollDragInfo.currentPos == this.scrollDragInfo.prevPos )
+			return;
+		this.scrollDragInfo.prevPos = this.scrollDragInfo.currentPos;
+		if( this.scrollDragInfo.currentPos < 0 )
+			this.scrollDragInfo.currentPos = 0;
+		if( this.scrollDragInfo.currentPos > this.hScrollSize )
+			this.scrollDragInfo.currentPos = this.hScrollSize;
+		this.$hScrollTumb.css({
+			left: this.scrollDragInfo.currentPos + "px",
+		});
+		
+		var oldpos = this.hScrollPos;
+		this.hScrollPos = Math.floor(this.scrollDragInfo.currentPos * this.hScrollMax / this.hScrollSize);
+		var scpos = '-' + this.hScrollPos + "px";
+		this.$content.css({left: scpos});
+		this.$headRowContent.css({left: scpos});
+		if( this.$footerCorner )
+			this.$footerRowContent.css({left: scpos});
+
+		this.refreshView();
+
+		if( oldpos != this.hScrollPos && typeof(this.options.onScroll) == "function" )
+			this.options.onScroll.call(grid, this.hScrollPos, this.vScrollPos);
+	};
+			
+	HugeGrid.prototype.onHScrollMouseUp = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		this.scrollDragInfo = null;
+		$(window).off("mousemove mouseup");
+	};
+
+	HugeGrid.prototype.onVScrollMouseDown = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		var pos = this.$vScrollTumb.position().top;
+		this.scrollDragInfo = {
+			initialMousePos: e.pageY,
+			initialPos: pos,
+			currentPos: pos,
+			prevPos: pos
+		};
+		$(window).on("mousemove", this.onVScrollMouseMove.bind(this)).on("mouseup", this.onVScrollMouseUp.bind(this));
+	};
+	
+	HugeGrid.prototype.onVScrollMouseMove = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		this.scrollDragInfo.currentPos = this.scrollDragInfo.initialPos + e.pageY - this.scrollDragInfo.initialMousePos;
+		if( this.scrollDragInfo.currentPos == this.scrollDragInfo.prevPos )
+			return;
+		this.scrollDragInfo.prevPos = this.scrollDragInfo.currentPos;
+		if( this.scrollDragInfo.currentPos < 0 )
+			this.scrollDragInfo.currentPos = 0;
+		if( this.scrollDragInfo.currentPos > this.vScrollSize )
+			this.scrollDragInfo.currentPos = this.vScrollSize;
+		this.$vScrollTumb.css({
+			top: this.scrollDragInfo.currentPos + "px",
+		});
+
+		var oldpos = this.vScrollPos;
+		this.vScrollPos = Math.floor(this.scrollDragInfo.currentPos * this.vScrollMax / this.vScrollSize);
+		var scpos = '-' + this.vScrollPos + "px";
+		this.$content.css({top: scpos});
+		this.$headColContent.css({top: scpos});
+
+		this.updateVisibleRowIndexes();
+		this.refreshView();
+		this.processLoadingQueue();
+
+		if( oldpos != this.vScrollPos && typeof(this.options.onScroll) == "function" )
+			this.options.onScroll.call(grid, this.hScrollPos, this.vScrollPos);
+	};
+	
+	HugeGrid.prototype.onVScrollMouseUp = function(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		this.scrollDragInfo = null;
+		$(window).off("mousemove mouseup");
+	};
+	
 	/**
 	 *
 	 * @param {jQuery} $target
