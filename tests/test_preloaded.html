@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Huge-grid test with preloaded data</title>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" type="text/css" href="../css/huge-grid.min.css" />
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="../js/huge-grid.js"></script>
+	<script type="text/javascript">
+		var nameChars = "abcdefghijklmnopqrstuvwxyz";
+		
+		function randomName() {
+			var name = "";
+			var len = Math.round(Math.random() * 5) + 3;
+			var strLen = nameChars.length;
+			for( var i = 0; i < len; i++ ) {
+				name += nameChars[Math.round(Math.random() * strLen)];
+			}
+			return name;
+		}
+		
+		function generateData() {
+			var data = [];
+			for( var i = 0; i < 100000; i++ ) {
+				data.push({
+					id: i,
+					content: {
+						id: i,
+						name: randomName()
+					}
+				});
+			}
+			return data;
+		}
+		
+		function generateColumns() {
+			var header = [
+				{
+					id: "id",
+					content: "ID",
+					width: 50
+				},
+				{
+					id: "name",
+					content: "Name",
+					width: 200
+				}
+			];
+			for( var i = 0; i < 100; i++ ) {
+				header.push({
+					id: "random" + i,
+					content: "Random " + i,
+					width: 100
+				});
+			}
+			return header;
+		};
+		
+		$(function() {
+			$("#grid").hugeGrid({
+				sortRowHeight: 20,
+				sortKey: "name",
+				sortDesc: false,
+				fixedColumns: 2,
+				header: generateColumns(),
+				data: generateData()
+			});
+		});
+	</script>
+</head>
+<body>
+	<h1>Huge-grid with preloaded data.</h1>
+	<div id="grid" style="height: 500px;"></div>
+</body>
+</html>
