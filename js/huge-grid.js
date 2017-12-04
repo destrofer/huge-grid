@@ -2853,7 +2853,7 @@
 	};
 
 	HugeGrid.prototype.onDefaultSort = function(colId, isDesc) {
-		if( !this.useAjaxLoading && colId ) {
+		if( !this.useAjaxLoading && colId !== null ) {
 			var col = this.getHeader(colId);
 			this.data.sort(this.options.sortFunctions[col.sortType].bind(this, colId, isDesc));
 		}
@@ -3119,7 +3119,7 @@
 		filterRowHeight: 26,
 		markedColumnBackground: '#DDD',
 
-		sortKey: "0",			// column id to sort data by
+		sortKey: null,			// column id to sort data by
 		sortDesc: false,
 		noSort: false,			// when TRUE the sort row is not rendered.
 		autoSort: true,			// when TRUE grid automatically reorders rows when they change.
