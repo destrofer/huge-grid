@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.5.2
+* Version: 1.6.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -18,11 +18,63 @@
 
 ;(function($){
 	/**
+	 * @typedef {string} HugeGridColumnId
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		id: HugeGridColumnId,
+	 * 		content?: string,
+	 *		children?: Array.<HugeGridColumn>,
+	 * 		width?: number,
+	 * 		noSort?: boolean,
+	 * 		hidden?: boolean,
+	 * 		class?: string
+	 * }} HugeGridColumn
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		id: string|number,
+	 *  	marked?: boolean,
+	 *  	rowClass?: string,
+	 * 		content: Object.<HugeGridColumnId, string|number>,
+	 * 		titles?: Object.<HugeGridColumnId, string|number>,
+	 * 		classes?: Object.<HugeGridColumnId, string>,
+	 * 		tooltips?: Object.<HugeGridColumnId, string|number>,
+	 * 		sortData?: Object.<HugeGridColumnId, string|number>,
+	 * 		attributes?: Object.<HugeGridColumnId, Object.<string, string|object>>,
+	 * 		rowAttributes?: Object.<string, string|object>,
+	 * 		data?: Object.<HugeGridColumnId, *>,
+	 * 		ranges?: Array.<HugeGridRange>,
+	 * 		transformed?: boolean
+	 * }} HugeGridRow
+	 */
+
+	/**
 	 * @typedef {{
 	 * 		id: string,
+	 * 		type: string,
+	 * 		from: HugeGridColumnId,
+	 * 		to: HugeGridColumnId,
 	 * 		content: string,
-	 * 		width?: number,
-	 * }} HugeGridColumn
+	 * 		class: string,
+	 * 		style: string,
+	 * 		tooltip: string
+	 * }} HugeGridRange
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		gridId: string,
+	 * 		dataSession: number,
+	 * 		firstRow: number,
+	 * 		rowCount: number,
+	 * 		sortKey: string,
+	 * 		sortDesc: number,
+	 * 		param: string,
+	 * 		filter: string
+	 * }} HugeGridAjaxRequest
 	 */
 
 	/**
@@ -36,7 +88,7 @@
 	 * 		data: Array<HugeGridRow>
 	 * }} HugeGridAjaxResponse
 	 */
-
+	 
 	/**
 	 * @typedef {{
 	 * 		rowClass: string
@@ -52,19 +104,6 @@
 	 * 		move: function
 	 * }} HugeGridTracker
 	 */
-	/**
-	 * @typedef {{
-	 * 		id: string|number
-	 * 		content: Object.<string, string|number>,
-	 * 		titles: Object.<string, string|number>,
-	 * 		classes: Object.<string, string>,
-	 * 		tooltips: Object.<string, string|number>,
-	 * 		data: Object.<string, *>,
-	 * 		sortData: Object.<string, string|number>,
-	 *
-	 * 		blockId: number
-	 * }} HugeGridRow
-	 */
 
 	/**
 	 * @typedef {{
@@ -75,76 +114,127 @@
 
 	/**
 	 * @typedef {{
-	 * 		id: null|string,
-	 * 		splitterWidth: number,
+	 * 		value: number|string,
+	 * 		text: string
+	 * }} HugeGridFilterSelectOption
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		from: string,
+	 * 		from: string
+	 * }} HugeGridFilterRange
+	 */
+
+	/**
+	 * @typedef {{
+	 *		id: HugeGridColumnId,
+	 *		postName?: string,
+	 *		type: "text"|"number"|"date"|"time"|"select",
+	 *		options?: Array.<HugeGridFilterSelectOption>,
+	 *		value?: string|Array.<number|string>|HugeGridFilterRange
+	 * }} HugeGridFilter
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		type: "filter"|"header"|"data"|"footer"|"range",
+	 * 		colId?: HugeGridColumnId,
+	 * 		rowIdx?: number,
+	 * 		rowId?: string,
+	 * 		rangeId?: string,
+	 * 		row?: HugeGridRow,
+	 * 		range?: HugeGridRange,
+	 * 		viewTarget?: *
+	 * }} HugeGridTarget
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		row: number,
+	 * 		column: HugeGridColumn
+	 * }} HugeGridSelectionPoint
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		active: boolean,
+	 * 		startedAt: HugeGridSelectionPoint,
+	 * 		from: HugeGridSelectionPoint,
+	 * 		to: HugeGridSelectionPoint
+	 * }} HugeGridSelection
+	 */
+
+	/**
+	 * @typedef {{
 	 * 		header: Array.<HugeGridColumn>,
-	 * 		fixedColumns: number,
-	 * 		headRowHeight: number,
-	 * 		filterRowHeight: number,
-	 * 		markedColumnBackground: string,
-	 * 		sortKey: null|string,
-	 * 		sortDesc: boolean,
-	 * 		noSort: boolean,
-	 * 		autoSort: boolean,
-	 * 		sortRowHeight: number,
-	 * 		sortMarkup: string,
-	 * 		noSortMarkup: string,
 	 * 		data: Array.<HugeGridRow>|string,
-	 * 		dataType: string,
-	 * 		dataParam: null,
-	 * 		filter: null,
-	 * 		rowHeight: number,
-	 * 		rowCount: number,
-	 * 		blockSize: number,
-	 * 		hBlockSize: number,
-	 * 		superblockSize: number,
-	 * 		blockLevels: number,
-	 * 		maxConcurrentLoads: number,
-	 * 		preloadRows: number,
-	 * 		loadingBlockHeadMarkup: string,
-	 * 		loadingBlockContMarkup: string,
-	 * 		rangeBorderWidth: number,
-	 * 		selectionMode: string,
-	 * 		selectionMinColumnId: null,
-	 * 		selectionMaxColumnId: null,
-	 * 		footer: null,
-	 * 		footerHeight: number,
-	 * 		hScrollPos: number,
-	 * 		vScrollPos: number,
-	 * 		hScrollHeight: number,
-	 * 		vScrollWidth: number,
-	 * 		hScrollSpeed: number,
-	 * 		vScrollSpeed: number,
-	 * 		hScrollMarkup: string,
-	 * 		vScrollMarkup: string,
-	 * 		trackSorting: HugeGridSortTrackingOptions,
-	 * 		onSort: function,
-	 * 		onMarkChange: function,
-	 * 		onFilterChange: function,
-	 * 		onBeforeWheelScroll: function,
-	 * 		onMouseDown: function,
-	 * 		onMouseUp: function,
-	 * 		onSelectionStart: function,
-	 * 		onSelectionChange: function,
-	 * 		onSelectionEnd: function,
-	 * 		onClick: function,
-	 * 		onDblClick: function,
-	 * 		onOver: function,
-	 * 		onOut: function,
-	 * 		onSelect: function,
-	 * 		onDeselect: function,
-	 * 		onLoad: function,
-	 * 		onUnload: function,
-	 * 		onScroll: function,
-	 * 		onError: function,
-	 * 		onBlockHide: function,
-	 * 		onRowCountUpdate: function,
-	 * 		onBeforeRequestData: function,
-	 * 		onRowDataReceived: function,
-	 * 		sortFunctions: {
-	 * 			string: string,
-	 * 			numeric: numeric
-	 * 		},
+	 * 		footer?: HugeGridRow|null,
+	 * 		filter?: HugeGridFilter|null,
+	 * 		id?: string,
+	 * 		splitterWidth?: number,
+	 * 		fixedColumns?: number,
+	 * 		headRowHeight?: number,
+	 * 		filterRowHeight?: number,
+	 * 		markedColumnBackground?: string,
+	 * 		sortKey?: string,
+	 * 		sortDesc?: boolean,
+	 * 		noSort?: boolean,
+	 * 		autoSort?: boolean,
+	 * 		sortRowHeight?: number,
+	 * 		sortMarkup?: string,
+	 * 		noSortMarkup?: string,
+	 * 		dataType?: string,
+	 * 		dataParam?: null|string,
+	 * 		rowHeight?: number,
+	 * 		rowCount?: number,
+	 * 		blockSize?: number,
+	 * 		hBlockSize?: number,
+	 * 		superblockSize?: number,
+	 * 		blockLevels?: number,
+	 * 		maxConcurrentLoads?: number,
+	 * 		preloadRows?: number,
+	 * 		loadingBlockHeadMarkup?: string,
+	 * 		loadingBlockContMarkup?: string,
+	 * 		rangeBorderWidth?: number,
+	 * 		selectionMode?: string,
+	 * 		selectionMinColumnId?: null|HugeGridColumnId,
+	 * 		selectionMaxColumnId?: null|HugeGridColumnId,
+	 * 		footerHeight?: number,
+	 * 		hScrollPos?: number,
+	 * 		vScrollPos?: number,
+	 * 		hScrollHeight?: number,
+	 * 		vScrollWidth?: number,
+	 * 		hScrollSpeed?: number,
+	 * 		vScrollSpeed?: number,
+	 * 		hScrollMarkup?: string,
+	 * 		vScrollMarkup?: string,
+	 * 		trackSorting?: HugeGridSortTrackingOptions,
+	 * 		rowTransformer?: (function(rowData: HugeGridRow)),
+	 * 		onSort?: (function(colId: HugeGridColumnId, isDesc: boolean): boolean),
+	 * 		onMarkChange?: (function(target: HugeGridTarget)),
+	 * 		onFilterChange?: (function(target: HugeGridTarget): boolean),
+	 * 		onBeforeWheelScroll?: (function(event: JQueryEventObject|JQuery.Event, delta: number, deltaX: number, deltaY: number): boolean),
+	 * 		onMouseDown?: (function(target: HugeGridTarget)),
+	 * 		onMouseUp?: (function(target: HugeGridTarget)),
+	 * 		onSelectionStart?: (function(target: HugeGridTarget)),
+	 * 		onSelectionChange?: (function(target: HugeGridTarget)),
+	 * 		onSelectionEnd?: (function(target: HugeGridTarget)),
+	 * 		onClick?: (function(target: HugeGridTarget)),
+	 * 		onDblClick?: (function(target: HugeGridTarget)),
+	 * 		onOver?: (function(target: HugeGridTarget)),
+	 * 		onOut?: (function(target: HugeGridTarget)),
+	 * 		onSelect?: (function(selection: HugeGridSelection)),
+	 * 		onDeselect?: (function(selection: HugeGridSelection)),
+	 * 		onLoad?: (function(rowIdxFrom: number, rowIdxTo: number)),
+	 * 		onUnload?: (function(rowIdxFrom: number, rowIdxTo: number)),
+	 * 		onScroll?: (function(hScrollPos: number, vScrollPos: number)),
+	 * 		onError?: (function(resp: *)),
+	 * 		onBlockHide?: (function(firstRowIdx: number, leftBlockDomElement: JQuery, rightBlockDomElement: JQuery)),
+	 * 		onRowCountUpdate?: (function(filteredRows: number, unfilteredRows: number)),
+	 * 		onBeforeRequestData?: (function(requestData: HugeGridAjaxRequest)),
+	 * 		onRowDataReceived?: (function(response: HugeGridAjaxResponse)),
+	 * 		sortFunctions?: Object.<HugeGridColumnId, function(colId: HugeGridColumnId, isDesc: boolean, a: HugeGridRow, b: HugeGridRow): number>
 	 * }} HugeGridOptions
 	 */
 
@@ -523,25 +613,25 @@
 
 	/**
 	 * Contains an index of columns by their IDs.
-	 * @type {object}
+	 * @type {Object.<HugeGridColumnId, HugeGridColumn>}
 	 */
 	HugeGrid.prototype.columnIndex = null;
 
 	/**
 	 * Contains a list of all topmost level column nodes (with no children) in their respective order.
-	 * @type {Array}
+	 * @type {Array.<HugeGridColumn>}
 	 */
 	HugeGrid.prototype.columnList = null;
 
 	/**
 	 * Reference to the last fixed column.
-	 * @type {object}
+	 * @type {HugeGridColumn}
 	 */
 	HugeGrid.prototype.lastFixedColumn = null;
 
 	/**
 	 * Reference to the first unfixed column.
-	 * @type {object}
+	 * @type {HugeGridColumn}
 	 */
 	HugeGrid.prototype.firstUnfixedColumn = null;
 
@@ -1179,6 +1269,31 @@
 		this.refreshView();
 
 		this.$grid
+			.on("keydown", ".hg-typeahead-attachment-point", function(e) {
+				var key = ("which" in e) ? e.which : e.keyCode;
+				if( key === 8 || key === 46 ) {
+					var $this = $(this);
+					var grid = $this.closest(".huge-grid").data('hugeGrid');
+					var $filter = $this.closest(".hg-filter");
+					var colId = $filter.data("key");
+					var column = grid.getHeader(colId);
+					if( column && column.filter && typeof column.filter.twitterTypeAheadValue === "function" ) {
+						$filter.find(".hg-typeahead-value-target").val("").trigger("change");
+						$filter.find(".hg-typeahead-attachment-point").val("");
+					}
+				}
+			})
+			.on("typeahead:select", function(e, item) {
+				var grid = $(this).data('hugeGrid');
+				var $this = $(e.target);
+				var $filter = $this.closest(".hg-filter");
+				var colId = $filter.data("key");
+				var column = grid.getHeader(colId);
+				if( column && column.filter && typeof column.filter.twitterTypeAheadValue === "function" ) {
+					var val = column.filter.twitterTypeAheadValue(item);
+					$filter.find(".hg-typeahead-value-target").val(val).trigger("change");
+				}
+			})
 			.on('change', '.hg-mark', function(e) {
 				$(this).closest('.huge-grid').data('hugeGrid').onMarkChange(e);
 			})
@@ -1217,8 +1332,15 @@
 					var inst = $grid.data('hugeGrid');
 					var pos = inst.getCellDimensions(0, $target.data('col'));
 					$dropDown.offset();
+					var maxWidth = $grid.width();
+					var width = $dropDown.outerWidth(false);
+					var left = (pos.left + (pos.width - width) / 2);
+					if( left > maxWidth - width )
+						left = maxWidth - width;
+					if( left < 0 )
+						left = 0;
 					$dropDown.css({
-						left: (pos.left + (pos.width - $dropDown.outerWidth(false)) / 2) + 'px',
+						left: left + 'px',
 						top: (inst.headHeight + inst.options.filterRowHeight - 2) + 'px'
 					});
 					HugeGrid.$activeDropDown = $dropDown;
@@ -1289,8 +1411,11 @@
 		var gather = function() {
 			var $this = $(this);
 			var val = $this.val();
-			if( val !== null && val !== '' )
-				data[$this.data('col')] = val;
+			if( val !== null && val !== '' ) {
+				var col = $this.data('col');
+				if( col )
+					data[col] = val;
+			}
 		};
 		$(':input.hg-filter-input', this.$headCornerContent).each(gather);
 		$(':input.hg-filter-input', this.$headRowContent).each(gather);
@@ -2001,23 +2126,25 @@
 
 				html += '<div class="hg-drop-down" id="hgdd_' + this.id + '_' + cellInfo.id + '" ' + colId + ' data-target="hgri_' + this.id + '_' + cellInfo.id + '">';
 
+				var showFrom = ("showFrom" in filter) ? filter.showFrom : true;
+				var showTo = ("showTo" in filter) ? filter.showTo : true;
 				switch( filter.type ) {
 					case 'number': {
-						html += '<input class="hg-filter-input hg-filter-number" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" />';
-						html += ' - ';
-						html += '<input class="hg-filter-input hg-filter-number" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" />';
+						html += showFrom ? '<input class="hg-filter-input hg-filter-number" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" />' : '';
+						html += (showFrom && showTo) ? ' - ' : '';
+						html += showTo ? '<input class="hg-filter-input hg-filter-number" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" />' : '';
 						break;
 					}
 					case 'date': {
-						html += '<input class="hg-filter-input hg-filter-date calendar-input" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" />';
-						html += ' - ';
-						html += '<input class="hg-filter-input hg-filter-date calendar-input" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" />';
+						html += showFrom ? '<input class="hg-filter-input hg-filter-date calendar-input" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" />' : '';
+						html += (showFrom && showTo) ? ' - ' : '';
+						html += showTo ? '<input class="hg-filter-input hg-filter-date calendar-input" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" />' : '';
 						break;
 					}
 					case 'time': {
-						html += '<input class="hg-filter-input hg-filter-time short" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" placeholder="HH:MM" />';
-						html += ' - ';
-						html += '<input class="hg-filter-input hg-filter-time short" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" placeholder="HH:MM" />';
+						html += showFrom ? '<input class="hg-filter-input hg-filter-time short" type="text" value="' + HugeGrid.htmlspecialchars(from) + '"' + colId + ' data-range="from" placeholder="HH:MM" />' : '';
+						html += (showFrom && showTo) ? ' - ' : '';
+						html += showTo ? '<input class="hg-filter-input hg-filter-time short" type="text" value="' + HugeGrid.htmlspecialchars(to) + '"' + colId + ' data-range="to" placeholder="HH:MM" />' : '';
 						break;
 					}
 				}
@@ -2043,7 +2170,13 @@
 			if( filter ) {
 				switch( filter.type ) {
 					case 'text': {
-						markup += '<input class="hg-filter-input hg-filter-text" type="text" value="' + (filter.hasOwnProperty('value') ? HugeGrid.htmlspecialchars(filter.value) : '') + '" ' + colId + ' />';
+						if( typeof filter.twitterTypeAheadValue === "function" ) {
+							markup += '<input class="hg-typeahead-value-target hg-filter-input hg-filter-text" type="hidden" value="' + (filter.hasOwnProperty('value') ? HugeGrid.htmlspecialchars(filter.value) : '') + '" ' + colId + ' />';
+							markup += '<input class="hg-typeahead-attachment-point hg-filter-input hg-filter-text" type="text" value="' + (filter.hasOwnProperty('text') ? HugeGrid.htmlspecialchars(filter.text) : (filter.hasOwnProperty('value') ? HugeGrid.htmlspecialchars(filter.value) : '')) + '" />';
+						}
+						else {
+							markup += '<input class="hg-filter-input hg-filter-text" type="text" value="' + (filter.hasOwnProperty('value') ? HugeGrid.htmlspecialchars(filter.value) : '') + '" ' + colId + ' />';
+						}
 						break;
 					}
 					case 'number': {
@@ -2065,7 +2198,8 @@
 								if( filter.value.hasOwnProperty(i) )
 									idx[filter.value[i]] = i;
 						}
-						markup += '<select class="hg-filter-input hg-filter-select custom-select csel-dropdown" multiple="multiple" ' + colId + '>';
+						var customSelectClass = ("customSelectClass" in filter) ? filter.customSelectClass : "custom-select";
+						markup += '<select class="hg-filter-input hg-filter-select ' + customSelectClass + ' csel-dropdown"' + ((filter.hasOwnProperty('singleSelect') && filter.singleSelect) ? '' : ' multiple="multiple"') + ' ' + colId + '>';
 
 						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) === 'object' ) {
 							for( i in filter.empty )
@@ -2193,7 +2327,16 @@
 			}
 			else
 				content = '';
-			html += '<div class="hg-cell hg-td hg-' + this.id + '-ds-' + cellInfo.id + ' ' + rightClass + ' ' + bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id + cls + ccls + '" title="' + title + '">' + content + '</div>';
+			var attrHtml = '';
+			var attrs = (rowData.hasOwnProperty('attributes') && rowData.attributes.hasOwnProperty(cellInfo.id)) ? rowData.attributes[cellInfo.id] : null;
+			if( attrs && typeof attrs === "object" ) {
+				for( var k in attrs ) {
+					if( !attrs.hasOwnProperty(k) )
+						continue;
+					attrHtml += ' ' + k + '="' + HugeGrid.htmlspecialchars((typeof attrs[k] === "object") ? JSON.stringify(attrs[k]) : attrs[k]) + '"';
+				}
+			}
+			html += '<div class="hg-cell hg-td hg-' + this.id + '-ds-' + cellInfo.id + ' ' + rightClass + ' ' + bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id + cls + ccls + '" title="' + title + '"' + attrHtml + '>' + content + '</div>';
 		}
 		else {
 			for(var i = cellInfo.children.length - 1, j = 0; i >= 0; i--, j++)
@@ -2384,7 +2527,7 @@
 				this.$headColContent.append(blockData.html1);
 				this.$content.append(blockData.html2);
 
-				if( !queued ) {
+				if( !queued && blockData.loaded ) {
 					var brc1 = Math.max(0, Math.min(this.rowCount - 1, br1));
 					var brc2 = Math.max(0, Math.min(this.rowCount - 1, br2));
 					for( var n = brc1; n <= brc2; n++ )
@@ -2588,11 +2731,26 @@
 				}, 10);
 				break;
 			}
+			if( !rowData.hasOwnProperty("transformed") && typeof this.options.rowTransformer === "function" ) {
+				typeof this.options.rowTransformer.call(this, rowData);
+				rowData.transformed = true;
+			}
 			var rowClass = 'hg-row hg-' + this.id + '-row';
 			if( typeof(rowData.rowClass) === "string" )
 				rowClass += ' ' + rowData.rowClass;
-			colHtml += '<div id="hgr1_' + this.id + '_' + n + '" class="' + rowClass + '">';
-			contentHtml += '<div id="hgr2_' + this.id + '_' + n + '" class="' + rowClass + '">';
+
+			var attrHtml = '';
+			var attrs = rowData.hasOwnProperty('rowAttributes') ? rowData.rowAttributes : null;
+			if( attrs && typeof attrs === "object" ) {
+				for( var k in attrs ) {
+					if( !attrs.hasOwnProperty(k) )
+						continue;
+					attrHtml += ' ' + k + '="' + HugeGrid.htmlspecialchars((typeof attrs[k] === "object") ? JSON.stringify(attrs[k]) : attrs[k]) + '"';
+				}
+			}
+
+			colHtml += '<div id="hgr1_' + this.id + '_' + n + '" class="' + rowClass + '"' + attrHtml + '>';
+			contentHtml += '<div id="hgr2_' + this.id + '_' + n + '" class="' + rowClass + '"' + attrHtml + '>';
 			var hb = 0, hbIdx;
 			for( i = 0, j = this.options.header.length - 1; j >= 0; i++, j-- ) {
 				hb = i - this.options.fixedColumns;
@@ -3342,32 +3500,79 @@
 		hScrollMarkup: '<div class="hg-hscroll-tumb" />',
 		vScrollMarkup: '<div class="hg-vscroll-tumb" />',
 
+		// function(rowData)
+		rowTransformer: null,
+
 		// function(colId, isDesc) // return true if want to cancel sort switching
 		onSort: function(colId, isDesc) { return this.onDefaultSort(colId, isDesc); },
-		onMarkChange: null,			// function(target)
-		onFilterChange: null,		// function(target) Grid will not be reloaded if function returns FALSE.
-		onBeforeWheelScroll: null,	// function(event, delta, deltaX, deltaY) Must return TRUE to allow default grid scrolling.
-		onMouseDown: null,			// function(target)
-		onMouseUp: null,			// function(target)
-		// onMouseMove: null,			// function(target)
-		onSelectionStart: null,     // function(target)
-		onSelectionChange: null,    // function(target)
-		onSelectionEnd: null,       // function(target)
-		onClick: null,			    // function(target)
-		onDblClick: null,		    // function(target)
-		onOver: null,			    // function(target)
-		onOut: null,			    // function(target)
-		onSelect: null,       		// function(selection)
-		onDeselect: null,       	// function(selection)
-		onLoad: null,			    // function(rowIdxFrom, rowIdxTo)
-		onUnload: null,			    // function(rowIdxFrom, rowIdxTo)
-		onScroll: null,			    // function(hScrollPos, vScrollPos)
-		onError: null,			    // function(resp),
-		onBlockHide: null,		    // function(firstRowIdx, $leftBlockDomElement, $rightBlockDomElement)
-		onRowCountUpdate: null,	    // function(filteredRows, unfilteredRows)
-		onBeforeRequestData: null,	// function(requestData)
-		onRowDataReceived: null,	// function(response)
 
+		// function(target)
+		onMarkChange: null,
+
+		// function(target) Grid will not be reloaded if function returns FALSE.
+		onFilterChange: null,
+
+		// function(event, delta, deltaX, deltaY) Must return TRUE to allow default grid scrolling.
+		onBeforeWheelScroll: null,
+
+		// function(target)
+		onMouseDown: null,
+
+		// function(target)
+		onMouseUp: null,
+
+		// function(target)
+		onSelectionStart: null,
+
+		// function(target)
+		onSelectionChange: null,
+
+		// function(target)
+		onSelectionEnd: null,
+
+		// function(target)
+		onClick: null,
+
+		// function(target)
+		onDblClick: null,
+
+		// function(target)
+		onOver: null,
+
+		// function(target)
+		onOut: null,
+
+		// function(selection)
+		onSelect: null,
+
+		// function(selection)
+		onDeselect: null,
+
+		// function(rowIdxFrom, rowIdxTo)
+		onLoad: null,
+
+		// function(rowIdxFrom, rowIdxTo)
+		onUnload: null,
+
+		// function(hScrollPos, vScrollPos)
+		onScroll: null,
+
+		// function(resp)
+		onError: null,
+
+		// function(firstRowIdx, $leftBlockDomElement, $rightBlockDomElement)
+		onBlockHide: null,
+
+		// function(filteredRows, unfilteredRows)
+		onRowCountUpdate: null,
+
+		// function(requestData)
+		onBeforeRequestData: null,
+
+		// function(response)
+		onRowDataReceived: null,
+
+		// each key is column id and value is callback function(colId, isDesc, rowA, rowB)
 		sortFunctions: {
 			'string': function(colId, isDesc, a, b) {
 				var v1 = HugeGrid.getSortValue(a, colId, '');
@@ -3491,6 +3696,8 @@
 						break;
 					case "beginCursorTracking": instance.beginCursorTracking(hgArgs[1]); break;
 
+					case "rowTransformer": instance.options.rowTransformer = hgArgs[1]; break;
+
 					case "onSort": instance.options.onSort = hgArgs[1]; break;
 					case "onMarkChange": instance.options.onMarkChange = hgArgs[1]; break;
 					case "onFilterChange": instance.options.onFilterChange = hgArgs[1]; break;
@@ -3524,5 +3731,8 @@
 			new HugeGrid(this, options);
 		});
 		return retVal;
+	};
+	$.hugeGrid = {
+		htmlspecialchars: HugeGrid.htmlspecialchars
 	};
 })(jQuery);
