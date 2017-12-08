@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.6.0
+* Version: 1.7.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1069,7 +1069,120 @@
 		this.scrollDragInfo = null;
 		$(window).off("mousemove mouseup");
 	};
-	
+
+	HugeGrid.prototype.touchInfo = null;
+	HugeGrid.prototype.touchScrollInfo = null;
+
+	HugeGrid.prototype.onTouchStart = function(e) {
+		if( this.touchInfo !== null || $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest("a,.hg-allow-touch").length !== 0 )
+			return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+
+		if( this.touchScrollInfo !== null ) {
+			clearInterval(this.touchScrollInfo.timer);
+			this.touchScrollInfo = null;
+		}
+
+		var touch = e.originalEvent.changedTouches[0];
+		this.touchInfo = {
+			id: touch.identifier,
+			x: touch.pageX,
+			y: touch.pageY,
+			deltaX: 0,
+			deltaY: 0,
+			speedX: 0,
+			speedY: 0,
+			time: (new Date()).getTime()
+		};
+	};
+
+	HugeGrid.prototype.onTouchMove = function(e) {
+		if( this.touchInfo === null )
+			return;
+		for( var i = e.originalEvent.changedTouches.length - 1; i >= 0; i-- ) {
+			var touch = e.originalEvent.changedTouches[i];
+			if( touch.identifier !== this.touchInfo.id )
+				continue;
+
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			var time = (new Date()).getTime();
+			var deltaTime = (time - this.touchInfo.time) / 1000;
+			if( deltaTime === 0 )
+				return;
+
+			this.touchInfo.time = time;
+			this.touchInfo.deltaX = touch.pageX - this.touchInfo.x;
+			this.touchInfo.deltaY = touch.pageY - this.touchInfo.y;
+			this.touchInfo.speedX = this.touchInfo.deltaX / deltaTime;
+			this.touchInfo.speedY = this.touchInfo.deltaY / deltaTime;
+			this.touchInfo.x = touch.pageX;
+			this.touchInfo.y = touch.pageY;
+			this.scrollBy(-this.touchInfo.deltaX, -this.touchInfo.deltaY);
+		}
+	};
+
+	HugeGrid.prototype.onTouchEnd = function(e) {
+		if( this.touchInfo === null )
+			return;
+		for( var i = e.originalEvent.changedTouches.length - 1; i >= 0; i-- ) {
+			var touch = e.originalEvent.changedTouches[i];
+			if( touch.identifier !== this.touchInfo.id )
+				continue;
+
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			var time = (new Date()).getTime();
+			var deltaTime = (time - this.touchInfo.time) / 1000;
+
+			this.touchScrollInfo = {
+				speedX: this.touchInfo.speedX,
+				speedY: this.touchInfo.speedY,
+				time: time,
+				dampingX: 1000,
+				dampingY: 1000,
+				timer: setInterval((function() {
+					var time = (new Date()).getTime();
+					var deltaTime = (time - this.touchScrollInfo.time) / 1000;
+					if( deltaTime === 0 )
+						return;
+					this.touchScrollInfo.time = time;
+					this.scrollBy(-this.touchScrollInfo.speedX * deltaTime, -this.touchScrollInfo.speedY * deltaTime);
+					if( this.touchScrollInfo.speedX < 0 ) {
+						this.touchScrollInfo.speedX += this.touchScrollInfo.dampingX * deltaTime;
+						if( this.touchScrollInfo.speedX > 0 )
+							this.touchScrollInfo.speedX = 0;
+					}
+					else if( this.touchScrollInfo.speedX > 0 ) {
+						this.touchScrollInfo.speedX -= this.touchScrollInfo.dampingX * deltaTime;
+						if( this.touchScrollInfo.speedX < 0 )
+							this.touchScrollInfo.speedX = 0;
+					}
+					if( this.touchScrollInfo.speedY < 0 ) {
+						this.touchScrollInfo.speedY += this.touchScrollInfo.dampingY * deltaTime;
+						if( this.touchScrollInfo.speedY > 0 )
+							this.touchScrollInfo.speedY = 0;
+					}
+					else if( this.touchScrollInfo.speedY > 0 ) {
+						this.touchScrollInfo.speedY -= this.touchScrollInfo.dampingY * deltaTime;
+						if( this.touchScrollInfo.speedY < 0 )
+							this.touchScrollInfo.speedY = 0;
+					}
+					if( this.touchScrollInfo.speedX === 0 && this.touchScrollInfo.speedY === 0 ) {
+						console.log("clear");
+						clearInterval(this.touchScrollInfo.timer);
+						this.touchScrollInfo = null;
+					}
+				}).bind(this), 10)
+			};
+
+			this.touchInfo = null;
+		}
+	};
+
 	/**
 	 *
 	 * @param {JQuery} $target
@@ -1353,6 +1466,9 @@
 			.on("mouseup", function(e) { $(this).data("hugeGrid").onMouseUp(e); })
 			.on("mousedown", function(e) { $(this).data("hugeGrid").onMouseDown(e); })
 			.on("mousemove", function(e) { $(this).data("hugeGrid").onMouseMove(e); })
+			.on("touchstart", function(e) { $(this).data("hugeGrid").onTouchStart(e); })
+			.on("touchmove", function(e) { $(this).data("hugeGrid").onTouchMove(e); })
+			.on("touchend", function(e) { $(this).data("hugeGrid").onTouchEnd(e); })
 			.on("click", function(e) { $(this).data("hugeGrid").onClick(e); })
 			.on("dblclick", function(e) { $(this).data("hugeGrid").onDblClick(e); });
 
@@ -3627,7 +3743,7 @@
 		});
 
 	$(window).on('mousewheel wheel', function(e) {
-		if( HugeGrid.mouseOverGrid ) {
+		if( HugeGrid.mouseOverGrid && $(e.target).closest(".csel-options").length === 0 ) {
 			/** @var {number} e.originalEvent.wheelDeltaX */
 			/** @var {number} e.originalEvent.wheelDeltaY */
 			var deltaX = Math.min(Math.max(e.originalEvent.hasOwnProperty("wheelDeltaX") ? e.originalEvent.wheelDeltaX : -e.originalEvent.deltaX, -1), 1);
