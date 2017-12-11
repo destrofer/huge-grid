@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.7.0
+* Version: 1.7.1
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1072,12 +1072,30 @@
 
 	HugeGrid.prototype.touchInfo = null;
 	HugeGrid.prototype.touchScrollInfo = null;
+	HugeGrid.prototype.touchMoveHandler = null;
+	HugeGrid.prototype.touchEndHandler = null;
+	HugeGrid.prototype.touchCancelHandler = null;
 
 	HugeGrid.prototype.onTouchStart = function(e) {
-		if( this.touchInfo !== null || $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest("a,.hg-allow-touch").length !== 0 )
+		if( $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest("a,.hg-allow-touch").length !== 0 )
 			return;
+
+		if ( this.touchInfo !== null ) {
+			$(this.touchInfo.target)
+				.off("touchmove", this.touchMoveHandler)
+				.off("touchend", this.touchEndHandler)
+				.off("touchcancel", this.touchCancelHandler)
+			;
+		}
+
 		e.preventDefault();
 		e.stopImmediatePropagation();
+
+		if( this.touchMoveHandler === null ) {
+			this.touchMoveHandler = this.onTouchMove.bind(this);
+			this.touchEndHandler = this.onTouchEnd.bind(this);
+			this.touchCancelHandler = this.onTouchCancel.bind(this);
+		}
 
 		if( this.touchScrollInfo !== null ) {
 			clearInterval(this.touchScrollInfo.timer);
@@ -1086,6 +1104,7 @@
 
 		var touch = e.originalEvent.changedTouches[0];
 		this.touchInfo = {
+			target: e.target,
 			id: touch.identifier,
 			x: touch.pageX,
 			y: touch.pageY,
@@ -1095,18 +1114,24 @@
 			speedY: 0,
 			time: (new Date()).getTime()
 		};
+
+		$(this.touchInfo.target)
+			.on("touchmove", this.touchMoveHandler)
+			.on("touchend", this.touchEndHandler)
+			.on("touchcancel", this.touchCancelHandler)
+		;
 	};
 
 	HugeGrid.prototype.onTouchMove = function(e) {
 		if( this.touchInfo === null )
 			return;
+
 		for( var i = e.originalEvent.changedTouches.length - 1; i >= 0; i-- ) {
 			var touch = e.originalEvent.changedTouches[i];
 			if( touch.identifier !== this.touchInfo.id )
 				continue;
-
-			e.preventDefault();
-			e.stopImmediatePropagation();
+			//e.preventDefault();
+			//e.stopImmediatePropagation();
 
 			var time = (new Date()).getTime();
 			var deltaTime = (time - this.touchInfo.time) / 1000;
@@ -1127,11 +1152,11 @@
 	HugeGrid.prototype.onTouchEnd = function(e) {
 		if( this.touchInfo === null )
 			return;
+
 		for( var i = e.originalEvent.changedTouches.length - 1; i >= 0; i-- ) {
 			var touch = e.originalEvent.changedTouches[i];
 			if( touch.identifier !== this.touchInfo.id )
 				continue;
-
 			e.preventDefault();
 			e.stopImmediatePropagation();
 
@@ -1172,17 +1197,43 @@
 							this.touchScrollInfo.speedY = 0;
 					}
 					if( this.touchScrollInfo.speedX === 0 && this.touchScrollInfo.speedY === 0 ) {
-						console.log("clear");
 						clearInterval(this.touchScrollInfo.timer);
 						this.touchScrollInfo = null;
 					}
 				}).bind(this), 10)
 			};
 
+			$(this.touchInfo.target)
+				.off("touchmove", this.touchMoveHandler)
+				.off("touchend", this.touchEndHandler)
+				.off("touchcancel", this.touchCancelHandler)
+			;
+
 			this.touchInfo = null;
 		}
 	};
 
+	HugeGrid.prototype.onTouchCancel = function(e) {
+		if( this.touchInfo === null )
+			return;
+
+		for( var i = e.originalEvent.changedTouches.length - 1; i >= 0; i-- ) {
+			var touch = e.originalEvent.changedTouches[i];
+			if( touch.identifier !== this.touchInfo.id )
+				continue;
+
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			$(this.touchInfo.target)
+				.off("touchmove", this.touchMoveHandler)
+				.off("touchend", this.touchEndHandler)
+				.off("touchcancel", this.touchCancelHandler)
+			;
+
+			this.touchInfo = null;
+		}
+	};
 	/**
 	 *
 	 * @param {JQuery} $target
@@ -1466,9 +1517,7 @@
 			.on("mouseup", function(e) { $(this).data("hugeGrid").onMouseUp(e); })
 			.on("mousedown", function(e) { $(this).data("hugeGrid").onMouseDown(e); })
 			.on("mousemove", function(e) { $(this).data("hugeGrid").onMouseMove(e); })
-			.on("touchstart", function(e) { $(this).data("hugeGrid").onTouchStart(e); })
-			.on("touchmove", function(e) { $(this).data("hugeGrid").onTouchMove(e); })
-			.on("touchend", function(e) { $(this).data("hugeGrid").onTouchEnd(e); })
+			.on("touchstart", this.onTouchStart.bind(this))
 			.on("click", function(e) { $(this).data("hugeGrid").onClick(e); })
 			.on("dblclick", function(e) { $(this).data("hugeGrid").onDblClick(e); });
 
