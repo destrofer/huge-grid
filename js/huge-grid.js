@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.8.1
+* Version: 1.8.2
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1522,8 +1522,10 @@
 				var key = e.keyCode || e.which;
 				if( key === 13 ) {
 					$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
-					e.preventDefault();
-					e.stopPropagation();
+					if( !$(e.target).is("select") ) {
+						e.preventDefault();
+						e.stopPropagation();
+					}
 				}
 			})
 			.on('blur', ':input.hg-filter-input', function(e) {
