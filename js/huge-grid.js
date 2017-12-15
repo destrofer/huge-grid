@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.8.2
+* Version: 1.9.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -245,6 +245,7 @@
 	 * 		onRowCountUpdate?: (function(filteredRows: number, unfilteredRows: number)),
 	 * 		onBeforeRequestData?: (function(requestData: HugeGridAjaxRequest)),
 	 * 		onRowDataReceived?: (function(response: HugeGridAjaxResponse)),
+	 *      onViewUpdate?: (function(rowCount: number, firstVisibleRowIdx: number, lastVisibleRowIdx: number, previousFirstVisibleRowIdx: number, previousLastVisibleRowIdx: number)),
 	 * 		sortFunctions?: Object.<HugeGridColumnId, function(colId: HugeGridColumnId, isDesc: boolean, a: HugeGridRow, b: HugeGridRow): number>
 	 * }} HugeGridOptions
 	 */
@@ -2656,8 +2657,11 @@
 
 	HugeGrid.prototype.updateVisibleRowIndexes = function() {
 		var rh = this.options.rowHeight + 1;
+		var f = this.firstVisibleRowIdx, l = this.lastVisibleRowIdx;
 		this.firstVisibleRowIdx = Math.max(0, Math.min(this.rowCount, Math.floor(this.vScrollPos / rh)));
 		this.lastVisibleRowIdx =  Math.max(0, Math.min(this.rowCount, Math.floor((this.vScrollPos + this.containerHeight - 1) / rh)));
+		if( typeof this.options.onViewUpdate === "function" )
+			this.options.onViewUpdate.call(this, this.rowCount, this.firstVisibleRowIdx, this.lastVisibleRowIdx, f, l);
 	};
 
 	HugeGrid.prototype.refreshView = function() {
@@ -3838,6 +3842,9 @@
 		// function(response)
 		onRowDataReceived: null,
 
+		// function(rowCount, firstVisibleRowIdx, lastVisibleRowIdx, previousFirstVisibleRowIdx, previousLastVisibleRowIdx)
+		onViewUpdate: null,
+
 		// each key is column id and value is callback function(colId, isDesc, rowA, rowB)
 		sortFunctions: {
 			'string': function(colId, isDesc, a, b) {
@@ -3993,6 +4000,7 @@
 					case "onRowCountUpdate": instance.options.onRowCountUpdate = hgArgs[1]; break;
 					case "onBeforeRequestData": instance.options.onBeforeRequestData = hgArgs[1]; break;
 					case "onRowDataReceived": instance.options.onRowDataReceived = hgArgs[1]; break;
+					case "onViewUpdate": instance.options.onViewUpdate = hgArgs[1]; break;
 					default:
 						console.error("Method '" + options + "' is not implemented in huge grid.");
 				}
