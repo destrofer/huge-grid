@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.7.1
+* Version: 1.8.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -209,6 +209,9 @@
 	 * 		vScrollSpeed?: number,
 	 * 		hScrollMarkup?: string,
 	 * 		vScrollMarkup?: string,
+	 *      touchScrollSensitivity?: number,
+	 *      touchContextMenuTime?: number,
+	 *      dblTapTime?: number,
 	 * 		trackSorting?: HugeGridSortTrackingOptions,
 	 * 		rowTransformer?: (function(rowData: HugeGridRow)),
 	 * 		onSort?: (function(colId: HugeGridColumnId, isDesc: boolean): boolean),
@@ -222,6 +225,14 @@
 	 * 		onSelectionEnd?: (function(target: HugeGridTarget)),
 	 * 		onClick?: (function(target: HugeGridTarget)),
 	 * 		onDblClick?: (function(target: HugeGridTarget)),
+	 * 		onTouchStart?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onTouchMove?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onTouchEnd?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onTap?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onDblTap?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onTouchContextMenuStart?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
+	 * 		onTouchContextMenuCancel?: (function()),
+	 * 		onTouchContextMenu?: (function(event: JQueryEventObject|JQuery.Event, target: HugeGridTarget)),
 	 * 		onOver?: (function(target: HugeGridTarget)),
 	 * 		onOut?: (function(target: HugeGridTarget)),
 	 * 		onSelect?: (function(selection: HugeGridSelection)),
@@ -1072,57 +1083,72 @@
 
 	HugeGrid.prototype.touchInfo = null;
 	HugeGrid.prototype.touchScrollInfo = null;
-	HugeGrid.prototype.touchMoveHandler = null;
-	HugeGrid.prototype.touchEndHandler = null;
-	HugeGrid.prototype.touchCancelHandler = null;
+	HugeGrid.prototype.lastTapTime = null;
+	HugeGrid.prototype.lastTapTarget = null;
 
 	HugeGrid.prototype.onTouchStart = function(e) {
-		if( $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest("a,.hg-allow-touch").length !== 0 )
+		if( typeof this.options.onTouchStart === "function" ) {
+			if( this.options.onTouchStart.call(this, e, this.identifyTarget(e.target)) === false )
+				return;
+		}
+		if( $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest(".hg-allow-touch").length !== 0 )
 			return;
 
 		if ( this.touchInfo !== null ) {
-			$(this.touchInfo.target)
-				.off("touchmove", this.touchMoveHandler)
-				.off("touchend", this.touchEndHandler)
-				.off("touchcancel", this.touchCancelHandler)
-			;
+			if( this.touchInfo.contextMenuTimer ) {
+				clearTimeout(this.touchInfo.contextMenuTimer);
+				if( typeof this.options.onTouchContextMenuCancel === "function" )
+					this.options.onTouchContextMenuCancel.call(this);
+			}
 		}
 
 		e.preventDefault();
 		e.stopImmediatePropagation();
-
-		if( this.touchMoveHandler === null ) {
-			this.touchMoveHandler = this.onTouchMove.bind(this);
-			this.touchEndHandler = this.onTouchEnd.bind(this);
-			this.touchCancelHandler = this.onTouchCancel.bind(this);
-		}
 
 		if( this.touchScrollInfo !== null ) {
 			clearInterval(this.touchScrollInfo.timer);
 			this.touchScrollInfo = null;
 		}
 
+		var contextMenuTimeout = (function(ev) {
+			this.touchInfo.contextMenuTimer = null;
+			if( typeof this.options.onTouchContextMenu === "function" ) {
+				if( this.options.onTouchContextMenu.call(this, ev, this.identifyTarget(ev.target)) )
+					this.touchInfo = null;
+			}
+		}).bind(this, e);
+
+		var contextMenuTimer = null;
+		if(
+			typeof this.options.onTouchContextMenuStart !== "function"
+			|| this.options.onTouchContextMenuStart.call(this, e, this.identifyTarget(e.target)) !== false
+		)
+			contextMenuTimer = setTimeout(contextMenuTimeout, 1000 * this.options.touchContextMenuTime);
+
+		var time = (new Date()).getTime();
 		var touch = e.originalEvent.changedTouches[0];
 		this.touchInfo = {
 			target: e.target,
 			id: touch.identifier,
-			x: touch.pageX,
-			y: touch.pageY,
+			isScrolling: false,
+			contextMenuTimer: contextMenuTimer,
+			time: time,
+			startX: touch.pageX,
+			startY: touch.pageY,
+			lastX: touch.pageX,
+			lastY: touch.pageY,
 			deltaX: 0,
 			deltaY: 0,
 			speedX: 0,
-			speedY: 0,
-			time: (new Date()).getTime()
+			speedY: 0
 		};
-
-		$(this.touchInfo.target)
-			.on("touchmove", this.touchMoveHandler)
-			.on("touchend", this.touchEndHandler)
-			.on("touchcancel", this.touchCancelHandler)
-		;
 	};
 
 	HugeGrid.prototype.onTouchMove = function(e) {
+		if( typeof this.options.onTouchMove === "function" ) {
+			if( this.options.onTouchMove.call(this, e, this.identifyTarget(e.target)) === false )
+				return;
+		}
 		if( this.touchInfo === null )
 			return;
 
@@ -1139,17 +1165,33 @@
 				return;
 
 			this.touchInfo.time = time;
-			this.touchInfo.deltaX = touch.pageX - this.touchInfo.x;
-			this.touchInfo.deltaY = touch.pageY - this.touchInfo.y;
+			this.touchInfo.deltaX = touch.pageX - this.touchInfo.lastX;
+			this.touchInfo.deltaY = touch.pageY - this.touchInfo.lastY;
 			this.touchInfo.speedX = this.touchInfo.deltaX / deltaTime;
 			this.touchInfo.speedY = this.touchInfo.deltaY / deltaTime;
-			this.touchInfo.x = touch.pageX;
-			this.touchInfo.y = touch.pageY;
-			this.scrollBy(-this.touchInfo.deltaX, -this.touchInfo.deltaY);
+			this.touchInfo.lastX = touch.pageX;
+			this.touchInfo.lastY = touch.pageY;
+			if( this.touchInfo.isScrolling ) {
+				this.scrollBy(-this.touchInfo.deltaX, -this.touchInfo.deltaY);
+			}
+			else if( Math.abs(touch.pageX - this.touchInfo.startX) > this.options.touchScrollSensitivity || Math.abs(touch.pageY - this.touchInfo.startY) > this.options.touchScrollSensitivity ) {
+				if( this.touchInfo.contextMenuTimer ) {
+					clearTimeout(this.touchInfo.contextMenuTimer);
+					if( typeof this.options.onTouchContextMenuCancel === "function" )
+						this.options.onTouchContextMenuCancel.call(this);
+				}
+				this.touchInfo.contextMenuTimer = null;
+				this.touchInfo.isScrolling = true;
+				this.scrollBy(this.touchInfo.startX - touch.pageX, this.touchInfo.startY - touch.pageY);
+			}
 		}
 	};
 
 	HugeGrid.prototype.onTouchEnd = function(e) {
+		if( typeof this.options.onTouchEnd === "function" ) {
+			if( this.options.onTouchEnd.call(this, e, this.identifyTarget(e.target)) === false )
+				return;
+		}
 		if( this.touchInfo === null )
 			return;
 
@@ -1160,54 +1202,66 @@
 			e.preventDefault();
 			e.stopImmediatePropagation();
 
+			if( this.touchInfo.contextMenuTimer ) {
+				clearTimeout(this.touchInfo.contextMenuTimer);
+				if( typeof this.options.onTouchContextMenuCancel === "function" )
+					this.options.onTouchContextMenuCancel.call(this);
+			}
+
 			var time = (new Date()).getTime();
-			var deltaTime = (time - this.touchInfo.time) / 1000;
 
-			this.touchScrollInfo = {
-				speedX: this.touchInfo.speedX,
-				speedY: this.touchInfo.speedY,
-				time: time,
-				dampingX: 1000,
-				dampingY: 1000,
-				timer: setInterval((function() {
-					var time = (new Date()).getTime();
-					var deltaTime = (time - this.touchScrollInfo.time) / 1000;
-					if( deltaTime === 0 )
-						return;
-					this.touchScrollInfo.time = time;
-					this.scrollBy(-this.touchScrollInfo.speedX * deltaTime, -this.touchScrollInfo.speedY * deltaTime);
-					if( this.touchScrollInfo.speedX < 0 ) {
-						this.touchScrollInfo.speedX += this.touchScrollInfo.dampingX * deltaTime;
-						if( this.touchScrollInfo.speedX > 0 )
-							this.touchScrollInfo.speedX = 0;
-					}
-					else if( this.touchScrollInfo.speedX > 0 ) {
-						this.touchScrollInfo.speedX -= this.touchScrollInfo.dampingX * deltaTime;
-						if( this.touchScrollInfo.speedX < 0 )
-							this.touchScrollInfo.speedX = 0;
-					}
-					if( this.touchScrollInfo.speedY < 0 ) {
-						this.touchScrollInfo.speedY += this.touchScrollInfo.dampingY * deltaTime;
-						if( this.touchScrollInfo.speedY > 0 )
-							this.touchScrollInfo.speedY = 0;
-					}
-					else if( this.touchScrollInfo.speedY > 0 ) {
-						this.touchScrollInfo.speedY -= this.touchScrollInfo.dampingY * deltaTime;
-						if( this.touchScrollInfo.speedY < 0 )
-							this.touchScrollInfo.speedY = 0;
-					}
-					if( this.touchScrollInfo.speedX === 0 && this.touchScrollInfo.speedY === 0 ) {
-						clearInterval(this.touchScrollInfo.timer);
-						this.touchScrollInfo = null;
-					}
-				}).bind(this), 10)
-			};
+			if( this.touchInfo.isScrolling ) {
+				this.touchScrollInfo = {
+					speedX: this.touchInfo.speedX,
+					speedY: this.touchInfo.speedY,
+					time: time,
+					dampingX: 1000,
+					dampingY: 1000,
+					timer: setInterval((function() {
+						var time = (new Date()).getTime();
+						var deltaTime = (time - this.touchScrollInfo.time) / 1000;
+						if( deltaTime === 0 )
+							return;
+						this.touchScrollInfo.time = time;
+						this.scrollBy(-this.touchScrollInfo.speedX * deltaTime, -this.touchScrollInfo.speedY * deltaTime);
+						if( this.touchScrollInfo.speedX < 0 ) {
+							this.touchScrollInfo.speedX += this.touchScrollInfo.dampingX * deltaTime;
+							if( this.touchScrollInfo.speedX > 0 )
+								this.touchScrollInfo.speedX = 0;
+						}
+						else if( this.touchScrollInfo.speedX > 0 ) {
+							this.touchScrollInfo.speedX -= this.touchScrollInfo.dampingX * deltaTime;
+							if( this.touchScrollInfo.speedX < 0 )
+								this.touchScrollInfo.speedX = 0;
+						}
+						if( this.touchScrollInfo.speedY < 0 ) {
+							this.touchScrollInfo.speedY += this.touchScrollInfo.dampingY * deltaTime;
+							if( this.touchScrollInfo.speedY > 0 )
+								this.touchScrollInfo.speedY = 0;
+						}
+						else if( this.touchScrollInfo.speedY > 0 ) {
+							this.touchScrollInfo.speedY -= this.touchScrollInfo.dampingY * deltaTime;
+							if( this.touchScrollInfo.speedY < 0 )
+								this.touchScrollInfo.speedY = 0;
+						}
+						if( this.touchScrollInfo.speedX === 0 && this.touchScrollInfo.speedY === 0 ) {
+							clearInterval(this.touchScrollInfo.timer);
+							this.touchScrollInfo = null;
+						}
+					}).bind(this), 10)
+				};
+			}
+			else {
+				var target = this.identifyTarget(e.target);
+				if( typeof this.options.onTap === "function" )
+					this.options.onTap.call(this, e, target);
 
-			$(this.touchInfo.target)
-				.off("touchmove", this.touchMoveHandler)
-				.off("touchend", this.touchEndHandler)
-				.off("touchcancel", this.touchCancelHandler)
-			;
+				if( this.lastTapTime && this.lastTapTarget === e.target && time - this.lastTapTime < this.options.dblTapTime * 1000 && typeof this.options.onDblTap === "function" )
+					this.options.onDblTap.call(this, e, target);
+
+				this.lastTapTime = time;
+				this.lastTapTarget = e.target;
+			}
 
 			this.touchInfo = null;
 		}
@@ -1224,12 +1278,6 @@
 
 			e.preventDefault();
 			e.stopImmediatePropagation();
-
-			$(this.touchInfo.target)
-				.off("touchmove", this.touchMoveHandler)
-				.off("touchend", this.touchEndHandler)
-				.off("touchcancel", this.touchCancelHandler)
-			;
 
 			this.touchInfo = null;
 		}
@@ -1259,8 +1307,8 @@
 	};
 
 	HugeGrid.prototype.scrollTo = function(hPos, vPos) {
-		hPos = Math.max(0, Math.min(hPos, this.hScrollMax));
-		vPos = Math.max(0, Math.min(vPos, this.vScrollMax));
+		hPos = (hPos === null) ? this.hScrollPos : Math.max(0, Math.min(hPos, this.hScrollMax));
+		vPos = (vPos === null) ? this.vScrollPos : Math.max(0, Math.min(vPos, this.vScrollMax));
 
 		var scpos, stpos, scrolled = false;
 
@@ -1518,6 +1566,9 @@
 			.on("mousedown", function(e) { $(this).data("hugeGrid").onMouseDown(e); })
 			.on("mousemove", function(e) { $(this).data("hugeGrid").onMouseMove(e); })
 			.on("touchstart", this.onTouchStart.bind(this))
+			.on("touchmove", this.onTouchMove.bind(this))
+			.on("touchend", this.onTouchEnd.bind(this))
+			.on("touchcancel", this.onTouchCancel.bind(this))
 			.on("click", function(e) { $(this).data("hugeGrid").onClick(e); })
 			.on("dblclick", function(e) { $(this).data("hugeGrid").onDblClick(e); });
 
@@ -3611,7 +3662,7 @@
 	HugeGrid.htmlspecialchars.characterMap = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'};
 
 	/**
-	 * @type HugeGridOptions
+	 * @type {HugeGridOptions}
 	 */
 	HugeGrid.defaults = {
 		id: null,
@@ -3665,6 +3716,10 @@
 		hScrollMarkup: '<div class="hg-hscroll-tumb" />',
 		vScrollMarkup: '<div class="hg-vscroll-tumb" />',
 
+		touchScrollSensitivity: 5,
+		touchContextMenuTime: 1,
+		dblTapTime: 0.5,
+
 		// function(rowData)
 		rowTransformer: null,
 
@@ -3700,6 +3755,30 @@
 
 		// function(target)
 		onDblClick: null,
+
+		// function(event, target) Must return FALSE if default grid behaviour should be prevented.
+		onTouchStart: null,
+
+		// function(event, target) Must return FALSE if default grid behaviour should be prevented.
+		onTouchMove: null,
+
+		// function(event, target) Must return FALSE if default grid behaviour should be prevented.
+		onTouchEnd: null,
+
+		// function(event, target)
+		onTap: null,
+
+		// function(event, target)
+		onDblTap: null,
+
+		// function(event, target) Must return FALSE to prevent further context menu events.
+		onTouchContextMenuStart: null,
+
+		// function()
+		onTouchContextMenuCancel: null,
+
+		// function(event, target) Must return TRUE to prevent further grid scrolling and tap callbacks if context menu was shown or any action taken.
+		onTouchContextMenu: null,
 
 		// function(target)
 		onOver: null,
@@ -3838,7 +3917,7 @@
 					case "setDataParam": instance.dataParam = instance.options.dataParam = hgArgs[1]; break;
 					case "updateFooter": instance.updateFooter(hgArgs[1]); break;
 					case "getFilterData": retVal = $.extend({}, instance.getFilterData()); break;
-					case "resetFilter": retVal = $.extend({}, instance.resetFilter()); break;
+					case "resetFilter": instance.resetFilter(); break;
 					case "getCellDimensions": retVal = instance.getCellDimensions(hgArgs[1], hgArgs[2]); break;
 					case "getRowByIndex": retVal = instance.getRowByIndex(hgArgs[1]); break;
 					case "getRow": retVal = instance.getRow(hgArgs[1]); break;
@@ -3877,6 +3956,11 @@
 					case "onDeselect": instance.options.onDeselect = hgArgs[1]; break;
 					case "onClick": instance.options.onClick = hgArgs[1]; break;
 					case "onDblClick": instance.options.onDblClick = hgArgs[1]; break;
+					case "onTap": instance.options.onTap = hgArgs[1]; break;
+					case "onDblTap": instance.options.onDblTap = hgArgs[1]; break;
+					case "onTouchContextMenuStart": instance.options.onTouchContextMenuStart = hgArgs[1]; break;
+					case "onTouchContextMenu": instance.options.onTouchContextMenu = hgArgs[1]; break;
+					case "onTouchContextMenuCancel": instance.options.onTouchContextMenuCancel = hgArgs[1]; break;
 					case "onOver": instance.options.onOver = hgArgs[1]; break;
 					case "onOut": instance.options.onOut = hgArgs[1]; break;
 					case "onLoad": instance.options.onLoad = hgArgs[1]; break;
