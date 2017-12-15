@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.8.0
+* Version: 1.8.1
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -339,6 +339,7 @@
 					this.filterData[i] = val;
 			}
 		}
+		this.prevFilterData = JSON.stringify(this.filterData);
 
 		if( typeof this.options.data === "string" ) {
 			this.useAjaxLoading = true;
@@ -655,6 +656,11 @@
 	 * @type {object}
 	 */
 	HugeGrid.prototype.filterData = null;
+
+	/**
+	 * @type {object}
+	 */
+	HugeGrid.prototype.prevFilterData = null;
 
 	/**
 	 * @type {HugeGridOptions}
@@ -1087,6 +1093,8 @@
 	HugeGrid.prototype.lastTapTarget = null;
 
 	HugeGrid.prototype.onTouchStart = function(e) {
+		if( document.activeElement )
+			$(document.activeElement).blur();
 		if( typeof this.options.onTouchStart === "function" ) {
 			if( this.options.onTouchStart.call(this, e, this.identifyTarget(e.target)) === false )
 				return;
@@ -1391,6 +1399,7 @@
 			else if( $this.is('.hg-ranged-filter-input') )
 				$this.children('span').attr('title', '').text('');
 		});
+		this.prevFilterData = JSON.stringify(this.filterData);
 	};
 
 	HugeGrid.prototype.initView = function() {
@@ -1517,6 +1526,9 @@
 					e.stopPropagation();
 				}
 			})
+			.on('blur', ':input.hg-filter-input', function(e) {
+				$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
+			})
 			.on('change', ':input.hg-filter-input', function(e) {
 				$(this).closest('.huge-grid').data('hugeGrid').onFilterChange(e);
 			})
@@ -1618,11 +1630,7 @@
 			this.options.onMarkChange.call(this, target);
 	};
 
-	HugeGrid.prototype.onFilterChange = function(e) {
-		var target = this.identifyTarget(e.target);
-		if( target === null ) return;
-		target.event = e;
-
+	HugeGrid.prototype.updateFilterData = function() {
 		var data = {};
 		var gather = function() {
 			var $this = $(this);
@@ -1646,19 +1654,31 @@
 			}
 		});
 		this.filterData = data;
+	};
+
+	HugeGrid.prototype.onFilterChange = function(e) {
+		var target = this.identifyTarget(e.target);
+		if( target === null ) return;
+		target.event = e;
+
+		this.updateFilterData();
 
 		if( target.hasOwnProperty('viewTarget') )
-			$('#' + target.viewTarget).html(HugeGrid.getFilterRangeViewHtml(data.hasOwnProperty(target.colId) ? data[target.colId] : {}, this.columnIndex[target.colId].filter.type));
+			$('#' + target.viewTarget).html(HugeGrid.getFilterRangeViewHtml(this.filterData.hasOwnProperty(target.colId) ? this.filterData[target.colId] : {}, this.columnIndex[target.colId].filter.type));
 
-		var fe = this.triggerEvent($(e.target), 'filterchange', {originalEvent: e, gridTarget: target, filterData: data});
+		var filterString = JSON.stringify(this.filterData);
+		if( filterString !== this.prevFilterData ) {
+			this.prevFilterData = filterString;
+			var fe = this.triggerEvent($(e.target), 'filterchange', {originalEvent: e, gridTarget: target, filterData: this.filterData});
 
-		var res = true;
-		if( !fe.isPropagationStopped() )
-			if( typeof(this.options.onFilterChange) === "function" )
-				res = this.options.onFilterChange.call(this, target);
+			var res = true;
+			if( !fe.isPropagationStopped() )
+				if( typeof(this.options.onFilterChange) === "function" )
+					res = this.options.onFilterChange.call(this, target);
 
-		if( (typeof res !== 'boolean' || res === true) && !fe.isDefaultPrevented() )
-			this.reloadData(false);
+			if( (typeof res !== 'boolean' || res === true) && !fe.isDefaultPrevented() )
+				this.reloadData(false);
+		}
 	};
 
 	HugeGrid.prototype.beginCursorTracking = function(tracker) {
