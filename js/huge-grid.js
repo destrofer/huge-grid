@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.9.0
+* Version: 1.9.1
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -2951,6 +2951,8 @@
 	HugeGrid.prototype.generateDataBlockHtml = function(blockId, updateDom) {
 		var n, i, j;
 		var lastRow = this.rowCount - 1;
+		if( typeof blockId === "string" )
+			blockId = parseInt(blockId);
 		var blockData = this.blocks[this.options.blockLevels - 1][blockId];
 		var colHtml = '', contentHtml = '';
 		var n1 = Math.max(blockId, 0);
