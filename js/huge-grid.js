@@ -3212,6 +3212,7 @@
 		this.updateHorizontalBlocks();
 
 		var sizes = this.calculateSizes();
+
 		this.headWidth = sizes.headWidth;
 		this.fullHeadWidth = this.headWidth + this.options.splitterWidth - 1;
 		this.$headCornerContent.css({width: this.headWidth + "px"});
@@ -3224,6 +3225,8 @@
 		this.$headRow.css({left: this.fullHeadWidth + "px"});
 		this.$headCol.css({width: this.fullHeadWidth + "px"});
 		this.$container.css({left: this.fullHeadWidth + "px"});
+		this.replaceCSSRules('hg-' + this.id + '-lblock', 'position:absolute;left:0;width:' + this.headWidth + 'px;height:' + ((this.options.rowHeight + 1) * this.options.blockSize) + 'px;');
+
 		this.contentWidth = sizes.contentWidth;
 		this.$headRowContent.css({width: this.contentWidth + "px"});
 		this.$content.css({width: this.contentWidth + "px"});
