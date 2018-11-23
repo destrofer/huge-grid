@@ -3212,9 +3212,23 @@
 		this.updateHorizontalBlocks();
 
 		var sizes = this.calculateSizes();
+		this.headWidth = sizes.headWidth;
+		this.fullHeadWidth = this.headWidth + this.options.splitterWidth - 1;
+		this.$headCornerContent.css({width: this.headWidth + "px"});
+		this.$headColContent.css({width: this.headWidth + "px"});
+		if( this.$footerCorner )
+			this.$footerCorner.css({width: this.fullHeadWidth + "px"});
+		if( this.$footerRow )
+			this.$footerRow.css({left: this.fullHeadWidth + "px"});
+		this.$headCorner.css({width: this.fullHeadWidth + "px"});
+		this.$headRow.css({left: this.fullHeadWidth + "px"});
+		this.$headCol.css({width: this.fullHeadWidth + "px"});
+		this.$container.css({left: this.fullHeadWidth + "px"});
 		this.contentWidth = sizes.contentWidth;
 		this.$headRowContent.css({width: this.contentWidth + "px"});
 		this.$content.css({width: this.contentWidth + "px"});
+		if( this.$footerRowContent )
+			this.$footerRowContent.css({width: this.contentWidth + "px"});
 		this.replaceCSSRules('hg-' + this.id + '-rblock', 'position:absolute;left:0;width:' + this.contentWidth + 'px;height:' + ((this.options.rowHeight + 1) * this.options.blockSize) + 'px;');
 
 		this.hScrollMax = Math.max(this.contentWidth - this.containerWidth - 1, 0);
