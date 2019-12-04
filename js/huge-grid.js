@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.9.1
+* Version: 1.10.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -115,15 +115,37 @@
 	/**
 	 * @typedef {{
 	 * 		value: number|string,
-	 * 		text: string
+	 * 		text: string,
+	 * 	    disabled?: boolean
 	 * }} HugeGridFilterSelectOption
 	 */
 
 	/**
 	 * @typedef {{
+	 * 		separator: "horizontal"|"vertical"
+	 * }} HugeGridFilterSelectSeparator
+	 */
+
+	/**
+	 * @typedef {{
 	 * 		from: string,
-	 * 		from: string
+	 * 		to: string
 	 * }} HugeGridFilterRange
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		text: string,
+	 * 		action: "select"|"deselect",
+	 * 		value: Array.<string>
+	 * }} CustomSelectAction
+	 */
+
+	/**
+	 * @typedef {{
+	 * 		text?: string,
+	 * 		actions: Array.<CustomSelectAction>
+	 * }} CustomSelectActionGroup
 	 */
 
 	/**
@@ -131,7 +153,8 @@
 	 *		id: HugeGridColumnId,
 	 *		postName?: string,
 	 *		type: "text"|"number"|"date"|"time"|"select",
-	 *		options?: Array.<HugeGridFilterSelectOption>,
+	 *		options?: Array.<HugeGridFilterSelectOption|HugeGridFilterSelectSeparator>,
+	 *	    actions?: Array.<CustomSelectActionGroup>,
 	 *		value?: string|Array.<number|string>|HugeGridFilterRange
 	 * }} HugeGridFilter
 	 */
@@ -2226,11 +2249,15 @@
 					}
 					else if( filterType === 'select' ) {
 						ok = false;
-						for( j in filterVal )
-							if( filterVal.hasOwnProperty(j) && filterVal[j] === val ) {
-								ok = true;
-								break;
-							}
+						if( typeof filterVal === "object" ) {
+							for( j in filterVal )
+								if( filterVal.hasOwnProperty(j) && filterVal[j] === val ) {
+									ok = true;
+									break;
+								}
+						}
+						else
+							ok = filterVal === val;
 						if( !ok )
 							break;
 					}
@@ -2438,27 +2465,12 @@
 									idx[filter.value[i]] = i;
 						}
 						var customSelectClass = ("customSelectClass" in filter) ? filter.customSelectClass : "custom-select";
-						markup += '<select class="hg-filter-input hg-filter-select ' + customSelectClass + ' csel-dropdown"' + ((filter.hasOwnProperty('singleSelect') && filter.singleSelect) ? '' : ' multiple="multiple"') + ' ' + colId + '>';
+						markup += '<select class="hg-filter-input hg-filter-select ' + customSelectClass + ' csel-dropdown"' + ((filter.hasOwnProperty('singleSelect') && filter.singleSelect) ? '' : ' multiple="multiple"') + ((filter.hasOwnProperty('actions') && filter.actions) ? ' data-actions="' + HugeGrid.htmlspecialchars(JSON.stringify(filter.actions)) + '"' : '') + ' ' + colId + '>';
 
-						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) === 'object' ) {
-							for( i in filter.empty )
-								if( filter.empty.hasOwnProperty(i) ) {
-									if( typeof filter.empty[i] === 'object' )
-										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.empty[i].value) + '"' + (idx.hasOwnProperty(filter.empty[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i].text) + '</option>';
-									else
-										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.empty[i]) + '</option>';
-								}
-						}
-
-						if( filter.hasOwnProperty('options') && filter.options && typeof(filter.options) === 'object' ) {
-							for( i in filter.options )
-								if( filter.options.hasOwnProperty(i) ) {
-									if( typeof filter.options[i] === 'object' )
-										markup += '<option value="' + HugeGrid.htmlspecialchars(filter.options[i].value) + '"' + (idx.hasOwnProperty(filter.options[i].value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i].text) + '</option>';
-									else
-										markup += '<option value="' + HugeGrid.htmlspecialchars(i) + '"' + (idx.hasOwnProperty(i) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(filter.options[i]) + '</option>';
-								}
-						}
+						if( filter.hasOwnProperty('empty') && filter.empty && typeof(filter.empty) === 'object' )
+							markup += HugeGrid.getFilterSelectOptionListHtml(idx, filter.empty);
+						if( filter.hasOwnProperty('options') && filter.options && typeof(filter.options) === 'object' )
+							markup += HugeGrid.getFilterSelectOptionListHtml(idx, filter.options);
 
 						markup += '</select>';
 						break;
@@ -2472,6 +2484,43 @@
 			for( i = 0, j = cellInfo.children.length - 1; i <= j; i++)
 				html += this.getFilterCellHtml(cellInfo.children[i], ((i === j) ? rightClass : ''), bottomClass + ' hg-' + this.id + '-col-' + cellInfo.id);
 		}
+		return html;
+	};
+
+	HugeGrid.getFilterSelectOptionListHtml = function(selectionIndex, options) {
+		var html = "";
+		for( var i in options ) {
+			if( !options.hasOwnProperty(i) )
+				continue;
+			var val, txt, dis;
+			if( typeof options[i] === 'object' ) {
+				if( typeof options[i].separator === "string" ) {
+					html += '<option value="" disabled="disabled" data-separator="' + HugeGrid.htmlspecialchars(options[i].separator) + '">&mdash;&mdash;&mdash;</option>';
+					continue;
+				}
+				val = options[i].value;
+				txt = options[i].text;
+				dis = options[i].disabled;
+			}
+			else {
+				val = i;
+				txt = options[i];
+				dis = false;
+			}
+			html += HugeGrid.getFilterSelectOptionHtml(selectionIndex, dis, val, txt);
+		}
+		return html;
+	};
+
+	HugeGrid.getFilterSelectOptionHtml = function(selectionIndex, disabled, value, text) {
+		var html = "";
+		if( typeof value === "object" ) {
+			html += '<optgroup label="' + HugeGrid.htmlspecialchars(text) + '">';
+			html += HugeGrid.getFilterSelectOptionListHtml(selectionIndex, value);
+			html += '</optgroup>';
+		}
+		else
+			html += '<option value="' + HugeGrid.htmlspecialchars(value) + '"' + (disabled ? ' disabled="disabled"' : '') + (selectionIndex.hasOwnProperty(value) ? ' selected="selected"' : '') + '>' + HugeGrid.htmlspecialchars(text) + '</option>';
 		return html;
 	};
 
