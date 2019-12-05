@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.10.0
+* Version: 1.11.0
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -136,7 +136,7 @@
 	/**
 	 * @typedef {{
 	 * 		text: string,
-	 * 		action: "select"|"deselect",
+	 * 		action: "select"|"deselect"|"toggle",
 	 * 		value: Array.<string>
 	 * }} CustomSelectAction
 	 */
