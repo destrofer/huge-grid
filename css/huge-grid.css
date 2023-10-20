@@ -238,6 +238,10 @@
 .hg-filter .hg-filter-input.hg-ranged-filter-input span.has-error {
   color: #A00;
 }
+.hg-filter .hg-filter-input.has-error {
+  border: 2px inset #A00;
+  border-radius: 2px;
+}
 .hg-filter .hg-filter-date + .ui-datepicker-trigger {
   position: absolute;
   right: 4px;
@@ -273,6 +277,10 @@
   top: 4px;
   margin: 0 2px 0 -18px;
 }
+.hg-drop-downs .hg-drop-down .hg-filter-input.has-error {
+  border: 2px inset #A00;
+  border-radius: 2px;
+}
 
 .hg-sort {
   box-sizing: border-box;
@@ -283,8 +291,7 @@
   position: relative;
   width: 32px;
   margin: 0 auto;
-  top: 3px;
-  /* top: 11px; */
+  top: 3px; /* top: 11px; */
 }
 
 .hg-sort-desc {

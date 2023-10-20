@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.11.1
+* Version: 1.11.2
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
