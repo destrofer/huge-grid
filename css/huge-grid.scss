@@ -160,6 +160,10 @@ $hgVScrollThumbBackground: url(../img/scrollv-tumb.png) no-repeat center center;
 				}
 			}
 		}
+		&.has-error {
+			border: 2px inset $hgErrorColor;
+			border-radius: 2px;
+		}
 	}
 	.hg-filter-date + .ui-datepicker-trigger {
 		position: absolute;
@@ -195,6 +199,13 @@ $hgVScrollThumbBackground: url(../img/scrollv-tumb.png) no-repeat center center;
 				position: relative;
 				top: 4px;
 				margin: 0 2px 0 -18px;
+			}
+		}
+
+		.hg-filter-input {
+			&.has-error {
+				border: 2px inset $hgErrorColor;
+				border-radius: 2px;
 			}
 		}
 	}

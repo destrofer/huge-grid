@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2012 Viacheslav Soroka
 *
-* Version: 1.11.0
+* Version: 1.11.1
 *
 * MIT License - http://www.opensource.org/licenses/mit-license.php
 */
@@ -1657,14 +1657,21 @@
 	};
 
 	HugeGrid.prototype.updateFilterData = function() {
+		var self = this;
 		var data = {};
 		var gather = function() {
 			var $this = $(this);
 			var val = $this.val();
 			if( val !== null && val !== '' ) {
 				var col = $this.data('col');
-				if( col )
-					data[col] = val;
+				if( col ) {
+					if (self.validateFilter($this, self.columnIndex[col], val)) {
+						$this.removeClass('has-error');
+						data[col] = val;
+					} else {
+						$this.addClass('has-error');
+					}
+				}
 			}
 		};
 		$(':input.hg-filter-input', this.$headCornerContent).each(gather);
@@ -1676,7 +1683,12 @@
 				var col = $this.data('col');
 				if( !data.hasOwnProperty(col) )
 					data[col] = {};
-				data[col][$this.data('range')] = val;
+				if (self.validateFilter(self.columnIndex[col].filter.type, val)) {
+					$this.removeClass('has-error');
+					data[col][$this.data('range')] = val;
+				} else {
+					$this.addClass('has-error');
+				}
 			}
 		});
 		this.filterData = data;
@@ -1706,6 +1718,13 @@
 				this.reloadData(false);
 		}
 	};
+
+	HugeGrid.prototype.validateFilter = function(type, value) {
+		if (type === 'date') {
+			return HugeGrid.parseDate(value);
+		}
+		return true;
+	}
 
 	HugeGrid.prototype.beginCursorTracking = function(tracker) {
 		if( tracker )
@@ -2122,7 +2141,7 @@
 				height: newHeight + 'px'
 			});
 		}
-		
+
 		this.update();
 	};
 
@@ -2150,9 +2169,8 @@
 		if( date === null || /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date) )
 			return date;
 		var matches = /^([0-9]{2})\.([0-9]{2})\.([0-9]{4})$/.exec(date);
-		if( matches === null )
-			return null;
-		return matches[3] + '-' + matches[2] + '-' + matches[1];
+		if( matches !== null ) return matches[3] + '-' + matches[2] + '-' + matches[1];
+		return null;
 	};
 
 	HugeGrid.prototype.applyFilter = function() {
@@ -2558,6 +2576,7 @@
 		else if( type === 'date' ) {
 			f = HugeGrid.parseDate(from);
 			t = HugeGrid.parseDate(to);
+			if ((from != '' && f === null) || (to != '' && t === null)) hasError = true;
 		}
 		else {
 			f = from;
