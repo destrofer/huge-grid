@@ -1117,14 +1117,17 @@
 	HugeGrid.prototype.lastTapTarget = null;
 
 	HugeGrid.prototype.onTouchStart = function(e) {
-		if( document.activeElement )
-			$(document.activeElement).blur();
 		if( typeof this.options.onTouchStart === "function" ) {
+			if( document.activeElement )
+				$(document.activeElement).blur();
 			if( this.options.onTouchStart.call(this, e, this.identifyTarget(e.target)) === false )
 				return;
 		}
 		if( $(e.target).closest(".hg-head-column,.hg-container").length === 0 || $(e.target).closest(".hg-allow-touch").length !== 0 )
 			return;
+
+		if( document.activeElement )
+			$(document.activeElement).blur();
 
 		if ( this.touchInfo !== null ) {
 			if( this.touchInfo.contextMenuTimer ) {
